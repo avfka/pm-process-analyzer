@@ -109,6 +109,7 @@ const CATEGORY_ORDER = Object.keys(CATEGORY_RULES) as WorkloadCategory[];
 const UNSTRUCTURED_SYSTEMS = new Set(["Email", "Google Meet", "Miro", "Slack"]);
 const HOURLY_RATE = PM_MONTHLY_SALARY / WORK_HOURS_PER_MONTH;
 const MINUTE_RATE = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
+const FULLY_LOADED_COST_MULTIPLIER = 1.5;
 
 export function formatRub(value: number) {
   return new Intl.NumberFormat("ru-RU", {
@@ -252,7 +253,7 @@ export function getAutomationDetail(score: AutomationScore, events: ProcessEvent
   const toBeWeekly = isContentHeavy(score.activity) ? 15 : Math.max(10, asIsWeekly * 0.15);
   const savedWeekly = Math.max(0, asIsWeekly - toBeWeekly);
   const savingPercent = asIsWeekly > 0 ? Math.round((savedWeekly / asIsWeekly) * 100) : 0;
-  const monthlyRub = savedWeekly * WEEKS_PER_MONTH * MINUTE_RATE;
+  const monthlyRub = savedWeekly * WEEKS_PER_MONTH * MINUTE_RATE * FULLY_LOADED_COST_MULTIPLIER;
 
   return {
     toBe: getToBeText(score.activity),
@@ -313,6 +314,15 @@ function getToBeIO(process: string, recType: string) {
     inputs: ["Сырые данные процесса", "Источник событий", "Правила обработки", "Ответственный PM"],
     outputs: ["Структурированный набор данных", "Обновлённый статус", "Метрика качества данных"],
   };
+}
+
+function getToBeProcessName(recType: string, relatedActivities: string[], fallback: string) {
+  if (recType === "data") return "Сбор данных";
+  if (recType === "manual") return "Ручная коммуникация";
+  if (recType === "report") return relatedActivities.find((activity) => /метрик|аналит/i.test(activity)) ?? "Анализ метрик";
+  if (recType === "approval") return relatedActivities.find((activity) => /соглас|ревью|review|prd/i.test(activity)) ?? "Согласование PRD";
+  if (recType === "backlog") return relatedActivities.find((activity) => /backlog|бэклог|приорит/i.test(activity)) ?? "Приоритизация бэклога";
+  return relatedActivities[0] ?? fallback;
 }
 
 function topNames(scores: AutomationScore[], count = 3) {
@@ -382,7 +392,7 @@ export function getToBeModels(analyzer: ProcessAnalyzer): ToBeModel[] {
 
   return recommendations.slice(0, 5).map((rec, index) => {
     const score = scores.find((item) => rec.relatedActivities.includes(item.activity));
-    const process = rec.relatedActivities[0] ?? rec.title;
+    const process = getToBeProcessName(rec.type, rec.relatedActivities, rec.title);
     const isManual = rec.type === "manual" || rec.type === "approval";
     const io = getToBeIO(process, rec.type);
 

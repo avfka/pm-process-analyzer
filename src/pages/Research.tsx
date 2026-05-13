@@ -88,9 +88,12 @@ export default function Research() {
               </div>
             ))}
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-            <p className="font-semibold text-foreground">Пример расчёта</p>
-            <p className="mt-1 text-muted-foreground">
+          <div className="rounded-xl border border-primary/25 bg-white p-5 text-sm shadow-sm ring-1 ring-primary/10">
+            <p className="flex items-center gap-2 text-base font-bold text-foreground">
+              <Calculator className="h-4 w-4 text-primary" />
+              Пример расчёта
+            </p>
+            <p className="mt-3 leading-relaxed text-foreground">
               Если процесс имеет F=80, D=60, V=70, S=90, то Aᵢ = 0.35×80 + 0.25×60 + 0.20×70 + 0.20×90 = 75.
               Такой процесс попадает в высокий приоритет автоматизации.
             </p>

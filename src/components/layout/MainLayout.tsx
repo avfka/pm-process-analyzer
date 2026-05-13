@@ -6,12 +6,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="pl-64">
+      <main className="pb-20 lg:pl-64 lg:pb-0">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="max-w-7xl mx-auto p-8"
+          className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8"
         >
           {children}
         </motion.div>

@@ -257,6 +257,9 @@ export default function AutomationRating() {
                     <p className="font-bold text-emerald-950">~{formatRub(selectedDetail.monthlyRub)}/мес</p>
                   </div>
                 </div>
+                <p className="mt-3 text-xs text-emerald-700">
+                  Оценка учитывает полную стоимость рабочего времени PM, а не только оклад.
+                </p>
               </div>
               <div className="rounded-xl border border-violet-100 bg-violet-50 p-4">
                 <div className="flex items-center gap-2 mb-2">

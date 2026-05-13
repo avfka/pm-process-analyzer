@@ -232,10 +232,6 @@ export default function Recommendations() {
   const highCount = recs.filter((r) => r.priority === 'Высокий').length;
   const midCount  = recs.filter((r) => r.priority === 'Средний').length;
   const lowCount  = recs.filter((r) => r.priority === 'Низкий').length;
-  const totalSaving = recs.reduce((sum, r) => {
-    const match = r.timeSaving.match(/(\d+)/);
-    return sum + (match ? parseInt(match[1]) : 0);
-  }, 0);
   const totalMinutes = events.reduce((sum, event) => sum + Number(event.duration || 0), 0);
   const minuteRate = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
   const weeklySavingHours = Math.round((totalMinutes * MCKINSEY_AI_TIME_REDUCTION / (WEEKS_PER_MONTH * 60) * teamSize) * 10) / 10;
@@ -258,7 +254,7 @@ export default function Recommendations() {
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {highCount > 0 && (
           <Card className="border-rose-200 bg-rose-50/60 shadow-sm">
             <CardContent className="p-4 text-center">
@@ -281,8 +277,8 @@ export default function Recommendations() {
         </Card>
         <Card className="border-emerald-200 bg-emerald-50/60 shadow-sm">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-emerald-700">{totalSaving}+</p>
-            <p className="text-xs text-emerald-600 font-medium mt-0.5">Ч/нед потенциальной экономии</p>
+            <p className="text-2xl font-bold text-emerald-700">~{weeklySavingHours}</p>
+            <p className="text-xs text-emerald-600 font-medium mt-0.5">Ч/нед по калькулятору</p>
           </CardContent>
         </Card>
       </div>

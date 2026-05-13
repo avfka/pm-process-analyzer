@@ -213,7 +213,7 @@ export default function Dashboard() {
             <CardDescription>Категории, где PM теряет больше всего времени</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {slices.map((slice, index) => (
+            {slices.filter((slice) => slice.minutes > 0).map((slice, index) => (
               <div key={slice.category} className="border-b border-border/40 pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
