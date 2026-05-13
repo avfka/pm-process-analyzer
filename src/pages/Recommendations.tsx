@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +19,14 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import type { Recommendation } from '@/lib/analyzer';
+import {
+  formatRub,
+  MCKINSEY_AI_TIME_REDUCTION,
+  PM_MONTHLY_SALARY,
+  RECOMMENDATION_EVIDENCE_BY_ID,
+  WEEKS_PER_MONTH,
+  WORK_HOURS_PER_MONTH,
+} from '@/lib/pm-insights';
 
 const TYPE_CONFIG: Record<
   Recommendation['type'],
@@ -176,6 +185,21 @@ function RecommendationCard({ rec, index }: { rec: Recommendation; index: number
                     <p className="text-sm font-bold text-foreground">{rec.tool}</p>
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-blue-50 border border-blue-100 p-3">
+                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Источник данных</p>
+                    <p className="mt-1 text-sm font-medium text-blue-950">
+                      {RECOMMENDATION_EVIDENCE_BY_ID[rec.id]?.source ?? 'Источник будет уточнён после классификации процесса'}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-violet-50 border border-violet-100 p-3">
+                    <p className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Нормативное обоснование</p>
+                    <p className="mt-1 text-sm font-medium text-violet-950">
+                      {RECOMMENDATION_EVIDENCE_BY_ID[rec.id]?.pmbok ?? 'PMBoK 6 · процесс будет уточнён после классификации'}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
@@ -187,6 +211,7 @@ function RecommendationCard({ rec, index }: { rec: Recommendation; index: number
 
 export default function Recommendations() {
   const { events, analyzer } = useData();
+  const [teamSize, setTeamSize] = useState(3);
 
   if (events.length === 0) {
     return (
@@ -211,6 +236,11 @@ export default function Recommendations() {
     const match = r.timeSaving.match(/(\d+)/);
     return sum + (match ? parseInt(match[1]) : 0);
   }, 0);
+  const totalMinutes = events.reduce((sum, event) => sum + Number(event.duration || 0), 0);
+  const minuteRate = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
+  const weeklySavingHours = Math.round((totalMinutes * MCKINSEY_AI_TIME_REDUCTION / 60 * teamSize) * 10) / 10;
+  const monthlySavingRub = totalMinutes * MCKINSEY_AI_TIME_REDUCTION * minuteRate * WEEKS_PER_MONTH * teamSize;
+  const yearlySavingRub = monthlySavingRub * 12;
 
   return (
     <div className="space-y-8">
@@ -256,6 +286,44 @@ export default function Recommendations() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-emerald-200 bg-emerald-50/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Калькулятор экономии</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-medium text-foreground">Размер команды PM</p>
+              <Badge className="bg-emerald-600">{teamSize} PM</Badge>
+            </div>
+            <Slider
+              min={1}
+              max={20}
+              step={1}
+              value={[teamSize]}
+              onValueChange={(value) => setTeamSize(value[0] ?? 3)}
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-emerald-700">Экономия в месяц</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-950">~{formatRub(monthlySavingRub)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-emerald-700">Экономия в год</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-950">~{formatRub(yearlySavingRub)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-emerald-700">Часов в неделю</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-950">~{weeklySavingHours} ч</p>
+            </div>
+          </div>
+          <p className="text-xs text-emerald-800">
+            Расчёт на основе McKinsey (2024) и средней зарплаты PM hh.ru (2024)
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Recommendation cards */}
       <div className="space-y-4">

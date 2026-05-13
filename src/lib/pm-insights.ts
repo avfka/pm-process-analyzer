@@ -54,6 +54,48 @@ export interface ToBeModel {
   expectedEffect: string;
 }
 
+export interface RecommendationEvidence {
+  source: string;
+  pmbok: string;
+}
+
+export interface AutomationDetail {
+  toBe: string;
+  asIsWeekly: number;
+  toBeWeekly: number;
+  savingPercent: number;
+  monthlyRub: number;
+  pmbok: string;
+}
+
+export const PM_MONTHLY_SALARY = 200000;
+export const WORK_HOURS_PER_MONTH = 168;
+export const MCKINSEY_AI_TIME_REDUCTION = 0.4;
+export const WEEKS_PER_MONTH = 4.3;
+
+export const RECOMMENDATION_EVIDENCE_BY_ID: Record<string, RecommendationEvidence> = {
+  report: {
+    source: "McKinsey, 2024: использование AI сокращает время подготовки отчётов на 40%",
+    pmbok: "PMBoK 6 · 10.2 Manage Communications · p. 379 · PMIS, шаблоны, автоматическая рассылка",
+  },
+  approval: {
+    source: "BCG, 2024: автоматизация согласований сокращает lead time на 20–35%",
+    pmbok: "PMBoK 6 · 13.3 Manage Stakeholder Engagement · управление ожиданиями и коммуникациями",
+  },
+  backlog: {
+    source: "Asana Anatomy of Work, 2023: улучшение процессов экономит до 4.9 ч/нед",
+    pmbok: "PMBoK 6 · 5.2 Collect Requirements · формализация требований и критериев готовности",
+  },
+  manual: {
+    source: "Asana Anatomy of Work, 2023: 58% рабочего дня уходит на work about work",
+    pmbok: "PMBoK 6 · 10.1 Plan Communications · планирование каналов, форматов и владельцев коммуникаций",
+  },
+  data: {
+    source: "McKinsey, 2024: AI сокращает контентно-лёгкие задачи на 15%",
+    pmbok: "PMBoK 6 · 4.5 Monitor and Control Project Work · мониторинг статусов, данных и отклонений",
+  },
+};
+
 const CATEGORY_RULES: Record<WorkloadCategory, string[]> = {
   "Стратегия и discovery": ["discovery", "гипотез", "заказчик", "требован", "интервью", "исслед"],
   "Контент и документы": ["prd", "специфик", "отчет", "отчёт", "сводк", "повест", "документ"],
@@ -65,6 +107,16 @@ const CATEGORY_RULES: Record<WorkloadCategory, string[]> = {
 
 const CATEGORY_ORDER = Object.keys(CATEGORY_RULES) as WorkloadCategory[];
 const UNSTRUCTURED_SYSTEMS = new Set(["Email", "Google Meet", "Miro", "Slack"]);
+const HOURLY_RATE = PM_MONTHLY_SALARY / WORK_HOURS_PER_MONTH;
+const MINUTE_RATE = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
+
+export function formatRub(value: number) {
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 0,
+  }).format(Math.round(value));
+}
 
 function matchCategory(event: ProcessEvent): WorkloadCategory {
   const text = `${event.activity} ${event.system}`.toLowerCase();
@@ -145,6 +197,78 @@ export function calculateImpact(events: ProcessEvent[], input: ImpactInput): Imp
     hourlyRate: Math.round(hourlyRate),
     heavyHours: Math.round(heavyHours * input.teamSize * 10) / 10,
     lightHours: Math.round(lightHours * input.teamSize * 10) / 10,
+  };
+}
+
+function isContentHeavy(activity: string) {
+  const text = activity.toLowerCase();
+  return ["отчет", "отчёт", "метрик", "аналит", "prd", "специфик", "документ", "сводк"].some((keyword) =>
+    text.includes(keyword)
+  );
+}
+
+function getAutomationPmbok(activity: string) {
+  const text = activity.toLowerCase();
+  if (["отчет", "отчёт", "метрик", "аналит"].some((keyword) => text.includes(keyword))) {
+    return "PMBoK 6 · 10.2 Manage Communications · p. 379";
+  }
+  if (["соглас", "ревью", "review", "аппрув"].some((keyword) => text.includes(keyword))) {
+    return "PMBoK 6 · 13.3 Manage Stakeholder Engagement";
+  }
+  if (["jira", "backlog", "бэклог", "задач", "приорит"].some((keyword) => text.includes(keyword))) {
+    return "PMBoK 6 · 5.2 Collect Requirements";
+  }
+  if (["сбор", "данн", "опрос", "фидбек"].some((keyword) => text.includes(keyword))) {
+    return "PMBoK 6 · 4.5 Monitor and Control Project Work";
+  }
+  return "PMBoK 6 · 10.1 Plan Communications";
+}
+
+function getToBeText(activity: string) {
+  const text = activity.toLowerCase();
+  if (["отчет", "отчёт", "метрик", "аналит"].some((keyword) => text.includes(keyword))) {
+    return "Автоматическая генерация по шаблону через Jira/Amplitude API → PDF → рассылка по расписанию. PM только проверяет выводы.";
+  }
+  if (["jira", "backlog", "бэклог", "задач", "приорит"].some((keyword) => text.includes(keyword))) {
+    return "Автосоздание и обновление задач по шаблону: обязательные поля, критерии готовности и приоритет проставляются до планирования.";
+  }
+  if (["соглас", "ревью", "review", "аппрув"].some((keyword) => text.includes(keyword))) {
+    return "Workflow согласования с SLA, автоуведомлениями и фиксацией решения в системе вместо ручных follow-up сообщений.";
+  }
+  if (["сбор", "данн", "опрос", "фидбек"].some((keyword) => text.includes(keyword))) {
+    return "Интеграция источников данных без ручного копирования: события автоматически попадают в рабочий контур PM.";
+  }
+  return "Шаблон процесса и автоматическая фиксация результата: PM работает с исключениями, а не с ручным переносом данных.";
+}
+
+export function getAutomationDetail(score: AutomationScore, events: ProcessEvent[]): AutomationDetail {
+  const asIsWeekly = score.avgDuration * score.frequency / WEEKS_PER_MONTH;
+  const toBeWeekly = isContentHeavy(score.activity) ? 15 : Math.max(10, asIsWeekly * 0.15);
+  const savedWeekly = Math.max(0, asIsWeekly - toBeWeekly);
+  const savingPercent = asIsWeekly > 0 ? Math.round((savedWeekly / asIsWeekly) * 100) : 0;
+  const monthlyRub = savedWeekly * MINUTE_RATE * WEEKS_PER_MONTH;
+
+  return {
+    toBe: getToBeText(score.activity),
+    asIsWeekly: Math.round(asIsWeekly),
+    toBeWeekly: Math.round(toBeWeekly),
+    savingPercent,
+    monthlyRub: Math.round(monthlyRub),
+    pmbok: getAutomationPmbok(score.activity),
+  };
+}
+
+export function getDashboardMetrics(events: ProcessEvent[]) {
+  const totalMinutes = events.reduce((sum, event) => sum + Number(event.duration || 0), 0);
+  const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+  const monthlySavingRub = totalMinutes * MCKINSEY_AI_TIME_REDUCTION * MINUTE_RATE;
+  const routineHoursPerWeek = totalMinutes / WEEKS_PER_MONTH / 60;
+
+  return {
+    totalMinutes,
+    totalHours,
+    monthlySavingRub: Math.round(monthlySavingRub),
+    routineHoursPerWeek: Math.round(routineHoursPerWeek * 10) / 10,
   };
 }
 

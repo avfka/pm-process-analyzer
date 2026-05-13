@@ -13,6 +13,7 @@ import Recommendations from "@/pages/Recommendations";
 import ImpactCalculator from "@/pages/ImpactCalculator";
 import MaterialGenerator from "@/pages/MaterialGenerator";
 import ToBeModel from "@/pages/ToBeModel";
+import Research from "@/pages/Research";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/materials" component={MaterialGenerator} />
         <Route path="/to-be" component={ToBeModel} />
         <Route path="/recommendations" component={Recommendations} />
+        <Route path="/research" component={Research} />
         <Route component={NotFound} />
       </Switch>
     </MainLayout>

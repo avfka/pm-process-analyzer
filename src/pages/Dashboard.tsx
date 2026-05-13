@@ -14,14 +14,32 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, AlertTriangle, Clock, Coins, FileText, Upload, Zap } from "lucide-react";
+import { Activity, Clock, Coins, Upload, Zap } from "lucide-react";
 import {
-  estimateWeeklyRecoverableHours,
-  getWorkAboutWork,
+  formatRub,
+  getDashboardMetrics,
   getWorkloadSlices,
 } from "@/lib/pm-insights";
 
 const COLORS = ["#2563eb", "#059669", "#d97706", "#dc2626", "#7c3aed", "#0891b2"];
+
+const RESEARCH_PAIN_CARDS = [
+  {
+    value: "58% рабочего дня",
+    title: "уходит на «work about work»",
+    source: "Asana Anatomy of Work, 2023 · 9 615 респондентов",
+  },
+  {
+    value: "116 минут за сеанс",
+    title: "тратит PM на контентно-тяжёлые задачи без AI",
+    source: "McKinsey, 2024 · 40 PM из 4 стран",
+  },
+  {
+    value: "−40% времени",
+    title: "при автоматизации контентно-тяжёлых задач",
+    source: "McKinsey Generative AI & PM Study, 2024",
+  },
+];
 
 function EmptyState() {
   return (
@@ -81,13 +99,8 @@ export default function Dashboard() {
   if (events.length === 0) return <EmptyState />;
 
   const slices = getWorkloadSlices(events);
-  const workAboutWork = getWorkAboutWork(events);
-  const recoverableHours = estimateWeeklyRecoverableHours(events);
+  const dashboardMetrics = getDashboardMetrics(events);
   const topScores = analyzer.getAutomationScores().slice(0, 3);
-  const totalHours = Math.round((events.reduce((sum, event) => sum + event.duration, 0) / 60) * 10) / 10;
-  const contentHours = slices
-    .filter((slice) => slice.category === "Контент и документы" || slice.category === "Данные и отчётность")
-    .reduce((sum, slice) => sum + slice.hours, 0);
 
   return (
     <div className="space-y-8">
@@ -103,12 +116,46 @@ export default function Dashboard() {
         </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard icon={Clock} label="Всего трудозатрат" value={`${totalHours} ч`} detail="по загруженному логу" />
-        <MetricCard icon={AlertTriangle} label="Work about work" value={`${workAboutWork.share}%`} detail={`${workAboutWork.hours} ч операционной нагрузки`} />
-        <MetricCard icon={Zap} label="Можно вернуть" value={`${recoverableHours} ч/нед`} detail="верхняя граница по Asana: 4,9 ч/нед" />
-        <MetricCard icon={Coins} label="Контентные задачи" value={`${contentHours.toFixed(1)} ч`} detail="отчеты, PRD, аналитика, сводки" />
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricCard
+          icon={Clock}
+          label="Суммарные трудозатраты"
+          value={`${dashboardMetrics.totalMinutes} мин · ${dashboardMetrics.totalHours} ч`}
+          detail="сумма duration по всем событиям"
+        />
+        <MetricCard
+          icon={Coins}
+          label="Потенциальная экономия"
+          value={`~${formatRub(dashboardMetrics.monthlySavingRub)}/мес`}
+          detail="По данным McKinsey (2024), AI сокращает контентно-тяжёлые задачи на 40%"
+        />
+        <MetricCard
+          icon={Zap}
+          label="Часов в неделю на рутину"
+          value={`${dashboardMetrics.routineHoursPerWeek} ч/нед`}
+          detail="суммарные минуты / 4.3 / 60"
+        />
       </div>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Боли из исследований</h2>
+          <p className="text-sm text-muted-foreground">
+            Данные, которые объясняют, зачем нужен анализ и автоматизация PM-рутины.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {RESEARCH_PAIN_CARDS.map((card) => (
+            <Card key={card.value} className="border-border/50 shadow-sm">
+              <CardContent className="p-5">
+                <p className="text-2xl font-bold text-primary">{card.value}</p>
+                <p className="mt-2 font-medium text-foreground">{card.title}</p>
+                <p className="mt-3 text-xs text-muted-foreground">{card.source}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
         <Card className="border-border/50 shadow-sm">

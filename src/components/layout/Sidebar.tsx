@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import {
   ActivitySquare,
+  BookOpen,
   Calculator,
   FileSearch,
   FileText,
@@ -22,6 +23,7 @@ const navItems = [
   { name: 'Генератор материалов', href: '/materials', icon: FileText },
   { name: 'TO-BE модель', href: '/to-be', icon: Route },
   { name: 'Рекомендации', href: '/recommendations', icon: Lightbulb },
+  { name: 'О исследовании', href: '/research', icon: BookOpen },
 ];
 
 export function Sidebar() {
