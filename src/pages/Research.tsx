@@ -5,7 +5,7 @@ import { BookOpen, Calculator, LibraryBig } from "lucide-react";
 const SOURCES = [
   ["McKinsey & Company, 2024", "40 PM, 4 страны", "−40% контентно-тяжёлые задачи"],
   ["Asana Anatomy of Work, 2023", "9 615 респондентов", "58% времени — work about work"],
-  ["McKinsey Global Institute, 2023", "мета-анализ", "$4.4 трлн потенциал AI"],
+  ["McKinsey Global Institute, 2023", "63 бизнес-кейса, 16 отраслей", "$4.4 трлн потенциал AI"],
 ];
 
 const PMBOK_MAPPING = [

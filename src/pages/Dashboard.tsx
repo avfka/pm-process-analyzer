@@ -133,7 +133,7 @@ export default function Dashboard() {
           icon={Zap}
           label="Часов в неделю на рутину"
           value={`${dashboardMetrics.routineHoursPerWeek} ч/нед`}
-          detail="суммарные минуты / 4.3 / 60"
+          detail="на основе McKinsey 2024"
         />
       </div>
 

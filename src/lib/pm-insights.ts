@@ -209,14 +209,20 @@ function isContentHeavy(activity: string) {
 
 function getAutomationPmbok(activity: string) {
   const text = activity.toLowerCase();
-  if (["отчет", "отчёт", "метрик", "аналит"].some((keyword) => text.includes(keyword))) {
-    return "PMBoK 6 · 10.2 Manage Communications · p. 379";
-  }
   if (["соглас", "ревью", "review", "аппрув"].some((keyword) => text.includes(keyword))) {
     return "PMBoK 6 · 13.3 Manage Stakeholder Engagement";
   }
-  if (["jira", "backlog", "бэклог", "задач", "приорит"].some((keyword) => text.includes(keyword))) {
+  if (["jira", "создание задачи", "задач"].some((keyword) => text.includes(keyword))) {
+    return "PMBoK 6 · 5.6 Control Scope";
+  }
+  if (["prd", "требован"].some((keyword) => text.includes(keyword))) {
     return "PMBoK 6 · 5.2 Collect Requirements";
+  }
+  if (["backlog", "бэклог", "приорит"].some((keyword) => text.includes(keyword))) {
+    return "PMBoK 6 · 5.6 Control Scope";
+  }
+  if (["отчет", "отчёт", "метрик", "аналит"].some((keyword) => text.includes(keyword))) {
+    return "PMBoK 6 · 4.5 Monitor and Control Project Work";
   }
   if (["сбор", "данн", "опрос", "фидбек"].some((keyword) => text.includes(keyword))) {
     return "PMBoK 6 · 4.5 Monitor and Control Project Work";
@@ -246,7 +252,7 @@ export function getAutomationDetail(score: AutomationScore, events: ProcessEvent
   const toBeWeekly = isContentHeavy(score.activity) ? 15 : Math.max(10, asIsWeekly * 0.15);
   const savedWeekly = Math.max(0, asIsWeekly - toBeWeekly);
   const savingPercent = asIsWeekly > 0 ? Math.round((savedWeekly / asIsWeekly) * 100) : 0;
-  const monthlyRub = savedWeekly * MINUTE_RATE * WEEKS_PER_MONTH;
+  const monthlyRub = savedWeekly * WEEKS_PER_MONTH * MINUTE_RATE;
 
   return {
     toBe: getToBeText(score.activity),
@@ -269,6 +275,43 @@ export function getDashboardMetrics(events: ProcessEvent[]) {
     totalHours,
     monthlySavingRub: Math.round(monthlySavingRub),
     routineHoursPerWeek: Math.round(routineHoursPerWeek * 10) / 10,
+  };
+}
+
+function getToBeIO(process: string, recType: string) {
+  const text = process.toLowerCase();
+
+  if (["метрик", "аналит"].some((keyword) => text.includes(keyword)) || recType === "report") {
+    return {
+      inputs: ["BI-дашборд", "Amplitude", "Данные retention", "Целевые продуктовые метрики"],
+      outputs: ["Автоматический daily report", "Алерты аномалий", "Список продуктовых гипотез"],
+    };
+  }
+
+  if (["соглас", "prd", "ревью", "review"].some((keyword) => text.includes(keyword)) || recType === "approval") {
+    return {
+      inputs: ["Черновик PRD", "Комментарии стейкхолдеров", "Критерии готовности", "История изменений"],
+      outputs: ["Подписанный PRD", "Трассируемые требования", "Список открытых вопросов"],
+    };
+  }
+
+  if (["backlog", "бэклог", "приорит"].some((keyword) => text.includes(keyword)) || recType === "backlog") {
+    return {
+      inputs: ["Пользовательский фидбек", "Метрики", "Техдолг", "Оценки команды"],
+      outputs: ["Упорядоченный backlog с оценками", "Приоритеты на спринт", "Обоснование решений"],
+    };
+  }
+
+  if (["email", "slack", "meet", "встреч", "коммуникац"].some((keyword) => text.includes(keyword)) || recType === "manual") {
+    return {
+      inputs: ["Сообщения Slack/email", "Решения митингов", "Контекст обсуждений", "Ответственные"],
+      outputs: ["Зафиксированные решения в Confluence", "Назначенные action items", "История договорённостей"],
+    };
+  }
+
+  return {
+    inputs: ["Сырые данные процесса", "Источник событий", "Правила обработки", "Ответственный PM"],
+    outputs: ["Структурированный набор данных", "Обновлённый статус", "Метрика качества данных"],
   };
 }
 
@@ -341,6 +384,7 @@ export function getToBeModels(analyzer: ProcessAnalyzer): ToBeModel[] {
     const score = scores.find((item) => rec.relatedActivities.includes(item.activity));
     const process = rec.relatedActivities[0] ?? rec.title;
     const isManual = rec.type === "manual" || rec.type === "approval";
+    const io = getToBeIO(process, rec.type);
 
     return {
       process,
@@ -353,8 +397,8 @@ export function getToBeModels(analyzer: ProcessAnalyzer): ToBeModel[] {
             : isManual
               ? "Структурированный workflow с владельцем, SLA, статусом и автоматической фиксацией результата."
               : "Автоматизированный поток данных между системами без ручного копирования и повторного ввода.",
-      inputs: ["Event log", "Данные из Jira/Confluence/Amplitude", "Ответственный PM", "Правила принятия решения"],
-      outputs: ["Обновлённый статус процесса", "Готовый артефакт", "Лог решения", "Метрика эффекта"],
+      inputs: io.inputs,
+      outputs: io.outputs,
       automation: rec.tool,
       pmbok:
         index % 2 === 0

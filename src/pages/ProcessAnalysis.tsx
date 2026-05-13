@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +12,6 @@ const BOTTLENECK_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e'
 
 export default function ProcessAnalysis() {
   const { events, analyzer } = useData();
-  const [transitionPage, setTransitionPage] = useState(0);
-  const TRANSITIONS_PER_PAGE = 10;
 
   if (events.length === 0) {
     return (
@@ -33,12 +30,6 @@ export default function ProcessAnalysis() {
   const bottlenecks = [...stats].sort((a, b) => b.avgDuration - a.avgDuration).slice(0, 5);
   const cycles = analyzer.getCycles();
   const transitions = analyzer.getTransitions();
-
-  const pagedTransitions = transitions.slice(
-    transitionPage * TRANSITIONS_PER_PAGE,
-    (transitionPage + 1) * TRANSITIONS_PER_PAGE
-  );
-  const totalTransitionPages = Math.ceil(transitions.length / TRANSITIONS_PER_PAGE);
 
   const bottleneckChartData = bottlenecks.map((b) => ({
     name: b.activity.length > 20 ? b.activity.slice(0, 18) + '…' : b.activity,
@@ -89,7 +80,7 @@ export default function ProcessAnalysis() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {pagedTransitions.map((t, i) => {
+              {transitions.map((t, i) => {
                 const maxCount = transitions[0]?.count || 1;
                 const intensity = Math.round((t.count / maxCount) * 100);
                 return (
@@ -116,29 +107,6 @@ export default function ProcessAnalysis() {
             </tbody>
           </table>
         </div>
-        {totalTransitionPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-border/30 bg-slate-50/50 text-sm text-muted-foreground">
-            <span>Страница {transitionPage + 1} из {totalTransitionPages} · Всего {transitions.length} переходов</span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={transitionPage === 0}
-                onClick={() => setTransitionPage((p) => p - 1)}
-              >
-                Назад
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={transitionPage === totalTransitionPages - 1}
-                onClick={() => setTransitionPage((p) => p + 1)}
-              >
-                Вперёд
-              </Button>
-            </div>
-          </div>
-        )}
       </Card>
 
       {/* Bottlenecks */}

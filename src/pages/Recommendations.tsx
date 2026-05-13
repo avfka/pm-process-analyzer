@@ -238,8 +238,8 @@ export default function Recommendations() {
   }, 0);
   const totalMinutes = events.reduce((sum, event) => sum + Number(event.duration || 0), 0);
   const minuteRate = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
-  const weeklySavingHours = Math.round((totalMinutes * MCKINSEY_AI_TIME_REDUCTION / 60 * teamSize) * 10) / 10;
-  const monthlySavingRub = totalMinutes * MCKINSEY_AI_TIME_REDUCTION * minuteRate * WEEKS_PER_MONTH * teamSize;
+  const weeklySavingHours = Math.round((totalMinutes * MCKINSEY_AI_TIME_REDUCTION / (WEEKS_PER_MONTH * 60) * teamSize) * 10) / 10;
+  const monthlySavingRub = totalMinutes * MCKINSEY_AI_TIME_REDUCTION * minuteRate * teamSize;
   const yearlySavingRub = monthlySavingRub * 12;
 
   return (
