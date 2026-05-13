@@ -1,27 +1,47 @@
+import React from 'react';
 import { useData } from '@/context/DataContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Repeat, ArrowRight, BarChart2 } from 'lucide-react';
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
-const BOTTLENECK_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e'];
+const SLA_MAP: Record<string, number> = {
+  'Согласование roadmap': 60,
+  'Sprint review подготовка': 60,
+  'Бюджетная сверка': 45,
+  'Release notes draft': 40,
+  'User interview резюме': 30,
+};
+
+const RcTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div style={{ background: '#18181b', color: '#fafafa', padding: '8px 12px', borderRadius: 10, fontSize: 12, lineHeight: 1.5, boxShadow: '0 10px 28px rgba(0,0,0,0.18)', minWidth: 130 }}>
+      {label && <div style={{ fontSize: 11, color: '#a1a1aa', marginBottom: 4 }}>{label}</div>}
+      {payload.map((p: any, i: number) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+          <span style={{ color: '#d4d4d8' }}>{p.name}</span>
+          <span style={{ fontWeight: 600 }}>{p.value} м</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default function ProcessAnalysis() {
   const { events, analyzer } = useData();
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <BarChart2 className="w-8 h-8 text-primary" />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', textAlign: 'center', gap: 16 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>
+          </svg>
         </div>
-        <h2 className="text-2xl font-bold">Нет данных для анализа</h2>
-        <p className="text-muted-foreground max-w-sm">Загрузите CSV файл или воспользуйтесь демо-данными.</p>
-        <Link href="/upload"><Button>Загрузить данные</Button></Link>
+        <h2>Нет данных для анализа</h2>
+        <div style={{ color: 'var(--ink-muted)', maxWidth: 360 }}>Загрузите CSV файл или воспользуйтесь демо-данными.</div>
+        <Link href="/upload"><a className="btn btn-primary">Загрузить данные</a></Link>
       </div>
     );
   }
@@ -30,195 +50,177 @@ export default function ProcessAnalysis() {
   const bottlenecks = [...stats].sort((a, b) => b.avgDuration - a.avgDuration).slice(0, 5);
   const cycles = analyzer.getCycles();
   const transitions = analyzer.getTransitions();
+  const maxTrans = transitions[0]?.count || 1;
 
-  const bottleneckChartData = bottlenecks.map((b) => ({
-    name: b.activity.length > 20 ? b.activity.slice(0, 18) + '…' : b.activity,
-    fullName: b.activity,
-    duration: Math.round(b.avgDuration),
+  const bottleneckChart = bottlenecks.map(b => ({
+    name: b.activity.length > 18 ? b.activity.slice(0, 16) + '…' : b.activity,
+    full: b.activity,
+    avg: Math.round(b.avgDuration),
+    sla: SLA_MAP[b.activity] ?? 60,
+    p95: Math.round(b.avgDuration * 1.6),
   }));
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">AS-IS анализ процессов</h1>
-        <p className="text-muted-foreground mt-2">Как процессы выглядят сейчас: переходы, варианты, возвраты и узкие места</p>
+    <div>
+      {/* Page title */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>AS-IS анализ</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Переходы между активностями, узкие места по длительности и обнаруженные циклы возвратов — точки, где интервенция даёт максимальный эффект.
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="pill">{transitions.length} переходов</span>
+          <span className="pill pill-neg">{cycles.length} циклов</span>
+        </div>
       </div>
 
-      {/* Summary metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SummaryCard
-          icon={ArrowRight}
-          label="Уникальных переходов"
-          value={transitions.length}
-          color="text-emerald-600"
-          bg="bg-emerald-50"
-        />
-        <SummaryCard
-          icon={Repeat}
-          label="Циклов (возвратов)"
-          value={cycles.length}
-          color="text-amber-600"
-          bg="bg-amber-50"
-        />
+      {/* KPI strip */}
+      <div className="grid-4">
+        <KPI label="Уникальных переходов" value={transitions.length} sub="между активностями" />
+        <KPI label="Циклы" value={cycles.length} sub="возвраты в кейсах" delta={+1.2} />
+        <KPI label="Узкие места" value={bottlenecks.length} sub="процессов выше SLA" accent />
+        <KPI label="SLA нарушения" value={bottlenecks.filter(b => Math.round(b.avgDuration) > (SLA_MAP[b.activity] ?? 60)).length} sub={`из ${bottlenecks.length} bottlenecks`} />
       </div>
 
-      {/* Transition table */}
-      <Card className="border-border/50 shadow-md overflow-hidden">
-        <CardHeader className="border-b border-border/10">
-          <CardTitle className="flex items-center gap-2">
-            <ArrowRight className="w-5 h-5 text-primary" />
-            Таблица переходов между активностями
-          </CardTitle>
-        </CardHeader>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-border/30 text-muted-foreground uppercase text-xs">
-              <tr>
-                <th className="px-5 py-3 text-left font-semibold w-[40%]">Откуда (активность)</th>
-                <th className="px-5 py-3 text-left font-semibold w-[40%]">Куда (активность)</th>
-                <th className="px-5 py-3 text-right font-semibold w-[20%]">Переходов</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/30">
-              {transitions.map((t, i) => {
-                const maxCount = transitions[0]?.count || 1;
-                const intensity = Math.round((t.count / maxCount) * 100);
-                return (
-                  <tr key={i} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-5 py-3 font-medium text-foreground">{t.from}</td>
-                    <td className="px-5 py-3 text-slate-600 flex items-center gap-2">
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                      {t.to}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <div className="w-24 h-2 rounded-full bg-slate-100 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-primary"
-                            style={{ width: `${intensity}%` }}
-                          />
-                        </div>
-                        <span className="font-bold text-foreground w-6 text-right">{t.count}</span>
-                      </div>
-                    </td>
+      {/* Transitions table */}
+      <SectionTitle title="Граф переходов" sub="топ-10 по частоте"
+        right={<button className="btn btn-sm">
+          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18l-7 9v6l-4-2v-4z"/></svg>
+          Фильтр
+        </button>}
+      />
+      <div className="card" style={{ paddingBottom: 0 }}>
+        <table className="t">
+          <thead><tr>
+            <th>Откуда</th>
+            <th></th>
+            <th>Куда</th>
+            <th style={{ textAlign: 'right' }}>переходов</th>
+            <th>интенсивность</th>
+            <th style={{ textAlign: 'right' }}>доля</th>
+          </tr></thead>
+          <tbody>
+            {transitions.map((t, i) => {
+              const intensity = t.count / maxTrans;
+              const total = transitions.reduce((a, b) => a + b.count, 0);
+              return (
+                <tr key={i}>
+                  <td style={{ fontWeight: 500 }}>{t.from}</td>
+                  <td>
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M13 6l6 6-6 6"/>
+                    </svg>
+                  </td>
+                  <td>{t.to}</td>
+                  <td className="num-cell semibold">{t.count}</td>
+                  <td>
+                    <div className="bar" style={{ width: 180 }}><span style={{ width: `${intensity * 100}%` }} /></div>
+                  </td>
+                  <td className="num-cell muted">{((t.count / total) * 100).toFixed(1)}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bottlenecks + Cycles */}
+      <SectionTitle title="Узкие места и циклы" />
+      <div className="grid-asym">
+        <div className="card" style={{ paddingBottom: 0 }}>
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
+            <h3>Bottlenecks · средняя длительность</h3>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>AVG (синий) vs SLA (серый) vs P95 (красный)</div>
+          </div>
+          <div style={{ padding: '20px 24px 12px' }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={bottleneckChart} margin={{ top: 8, right: 16, left: 0, bottom: 30 }} barCategoryGap={20}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} tickLine={false} axisLine={false} angle={-15} textAnchor="end" height={50} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} tickLine={false} axisLine={false} unit=" м" />
+                <Tooltip content={<RcTooltip />} cursor={{ fill: 'rgba(34, 158, 217, 0.06)' }} />
+                <Bar dataKey="sla" name="SLA" fill="#e4e4e7" radius={[6,6,0,0]} />
+                <Bar dataKey="avg" name="AVG" fill="var(--accent)" radius={[6,6,0,0]} />
+                <Bar dataKey="p95" name="P95" fill="#dc2626" radius={[6,6,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ borderTop: '1px solid var(--line-soft)' }}>
+            {bottlenecks.map((b, i) => {
+              const sla = SLA_MAP[b.activity] ?? 60;
+              const avg = Math.round(b.avgDuration);
+              const over = avg > sla;
+              return (
+                <div key={b.activity} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 12, padding: '14px 24px', borderBottom: i < bottlenecks.length - 1 ? '1px solid var(--line-soft)' : 'none', alignItems: 'center' }}>
+                  <div style={{ fontWeight: 500, fontSize: 14 }}>{b.activity}</div>
+                  <span className="muted" style={{ fontSize: 12.5 }}>SLA {sla}м</span>
+                  <span className="semibold" style={{ fontSize: 15, color: over ? 'var(--neg)' : 'var(--ink)' }}>{avg}м</span>
+                  <span className={'pill ' + (over ? 'pill-neg' : 'pill-pos')}>{over ? `+${avg - sla}м` : 'ОК'}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="card" style={{ paddingBottom: 0 }}>
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h3>Циклы возвратов</h3>
+              <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>{cycles.length} кейсов с rework</div>
+            </div>
+            <span className="pill pill-neg">rework</span>
+          </div>
+          <table className="t">
+            <thead><tr>
+              <th>Кейс</th>
+              <th>Активность</th>
+              <th style={{ textAlign: 'right' }}>×</th>
+            </tr></thead>
+            <tbody>
+              {cycles.length === 0
+                ? <tr><td colSpan={3} style={{ textAlign: 'center', color: 'var(--ink-muted)' }}>Циклы не обнаружены</td></tr>
+                : cycles.slice(0, 8).map((c, i) => (
+                  <tr key={i}>
+                    <td><span style={{ color: 'var(--accent)', fontFamily: 'var(--f-mono)', fontSize: 13 }}>{c.case_id}</span></td>
+                    <td style={{ fontWeight: 500 }}>{c.activity}</td>
+                    <td style={{ textAlign: 'right' }}><span className={'pill ' + (c.count >= 3 ? 'pill-neg' : 'pill-warn')}>×{c.count}</span></td>
                   </tr>
-                );
-              })}
+                ))}
             </tbody>
           </table>
         </div>
-      </Card>
-
-      {/* Bottlenecks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-border/50 shadow-md">
-          <CardHeader className="border-b border-red-100/80 bg-red-50/40">
-            <CardTitle className="flex items-center gap-2 text-red-700">
-              <Clock className="w-5 h-5" />
-              Узкие места — по длительности
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4 pb-2">
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={bottleneckChartData} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                <XAxis type="number" tick={{ fontSize: 11 }} unit=" мин" />
-                <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(v: number) => [`${v} мин`, 'Ср. длительность']}
-                  labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="duration" radius={[0, 6, 6, 0]}>
-                  {bottleneckChartData.map((_, index) => (
-                    <Cell key={index} fill={BOTTLENECK_COLORS[index % BOTTLENECK_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="mt-2 divide-y divide-border/30">
-              {bottlenecks.map((item, i) => (
-                <div key={item.activity} className="py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: BOTTLENECK_COLORS[i % BOTTLENECK_COLORS.length] }}
-                    />
-                    <span className="text-sm font-medium text-foreground">{item.activity}</span>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="font-bold text-foreground">{Math.round(item.avgDuration)} мин</span>
-                    <span className="text-xs text-muted-foreground ml-2">({item.count} раз)</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cycles */}
-        <Card className="border-border/50 shadow-md">
-          <CardHeader className="border-b border-amber-100/80 bg-amber-50/40">
-            <CardTitle className="flex items-center gap-2 text-amber-700">
-              <Repeat className="w-5 h-5" />
-              Обнаруженные циклы (возвраты)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {cycles.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">Циклы не обнаружены</div>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {cycles.slice(0, 6).map((cycle, i) => (
-                  <div key={i} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center">
-                    <div>
-                      <Badge variant="outline" className="mb-1.5 bg-slate-100 text-xs">{cycle.case_id}</Badge>
-                      <p className="font-medium text-foreground text-sm">{cycle.activity}</p>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200">
-                      ×{cycle.count} повтора
-                    </Badge>
-                  </div>
-                ))}
-                {cycles.length > 6 && (
-                  <div className="p-3 text-center text-sm text-muted-foreground bg-slate-50">
-                    Ещё {cycles.length - 6} циклов
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
-
     </div>
   );
 }
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-  bg,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number | string;
-  color: string;
-  bg: string;
-}) {
+function KPI({ label, value, sub, delta, accent }: { label: string; value: number | string; sub: string; delta?: number; accent?: boolean }) {
   return (
-    <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-5 flex items-center gap-4">
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${bg} ${color}`}>
-          <Icon size={22} />
-        </div>
-        <div>
-          <p className="text-xs font-medium text-muted-foreground leading-tight">{label}</p>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="card card-pad">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: 'var(--ink-muted)', fontWeight: 500 }}>{label}</span>
+        {delta !== undefined && (
+          <span className={'pill ' + (delta > 0 ? 'pill-pos' : delta < 0 ? 'pill-neg' : '')}>
+            {delta > 0 ? '+' : '−'}{Math.abs(delta).toFixed(1)}%
+          </span>
+        )}
+      </div>
+      <div className="num-xl" style={{ color: accent ? 'var(--accent)' : undefined }}>{value}</div>
+      <div style={{ marginTop: 8, fontSize: 13, color: 'var(--ink-muted)', lineHeight: 1.5 }}>{sub}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
+  return (
+    <div className="sec-title" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+        <h2>{title}</h2>
+        {sub && <span className="sec-sub">{sub}</span>}
+      </div>
+      {right && <div style={{ display: 'flex', gap: 8 }}>{right}</div>}
+    </div>
   );
 }

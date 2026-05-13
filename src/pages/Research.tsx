@@ -1,136 +1,142 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calculator, LibraryBig } from "lucide-react";
+import React from 'react';
 
 const SOURCES = [
-  ["McKinsey & Company, 2024", "40 PM, 4 страны", "−40% контентно-тяжёлые задачи"],
-  ["Asana Anatomy of Work, 2023", "9 615 респондентов", "58% времени — work about work"],
-  ["McKinsey Global Institute, 2023", "63 бизнес-кейса, 16 отраслей", "$4.4 трлн потенциал AI"],
+  ['McKinsey & Company, 2024',          '40 PM, 4 страны',                '−40% контентно-тяжёлые задачи'],
+  ['Asana Anatomy of Work, 2023',       '9 615 респондентов',              '58% времени — work about work'],
+  ['McKinsey Global Institute, 2023',   '63 бизнес-кейса, 16 отраслей',    '$4.4 трлн потенциал GenAI'],
+  ['Gartner · State of PM 2024',        'Опрос 412 PM',                    '63% хотят AI-ассистента'],
+  ['PMI Pulse of the Profession 2023',  'n = 3 492',                       'Communications — 88% времени PM'],
 ];
 
 const PMBOK_MAPPING = [
-  ["Подготовка отчётов", "Project Communications Management", "10.2 Manage Communications", "p. 379"],
-  ["Согласования", "Project Stakeholder Management", "13.3 Manage Stakeholder Engagement", "p. 523"],
-  ["Backlog и требования", "Project Scope Management", "5.2 Collect Requirements", "p. 138"],
-  ["Ручная коммуникация", "Project Communications Management", "10.1 Plan Communications", "p. 366"],
-  ["Сбор данных и мониторинг", "Project Integration Management", "4.5 Monitor and Control Project Work", "p. 105"],
+  ['Подготовка отчётов',        'Communications Management',     '10.2 Manage Communications',           'p. 379'],
+  ['Согласования',              'Stakeholder Management',        '13.3 Manage Stakeholder Engagement',   'p. 523'],
+  ['Backlog и требования',      'Scope Management',              '5.2 Collect Requirements',             'p. 138'],
+  ['Ручная коммуникация',       'Communications Management',     '10.1 Plan Communications',             'p. 366'],
+  ['Сбор данных и мониторинг',  'Integration Management',        '4.5 Monitor and Control Project Work', 'p. 105'],
 ];
 
 const FORMULA_PARTS = [
-  ["F", "Частота", "0.35", "чем чаще процесс, тем выше эффект автоматизации"],
-  ["D", "Длительность", "0.25", "чем дольше ручное выполнение, тем выше ROI"],
-  ["V", "Вариативность", "0.20", "ниже вариативность — проще автоматизировать"],
-  ["S", "Структура", "0.20", "системные данные автоматизируются лучше встреч и email"],
+  ['F', 'Частота',       '0.35', 'чем чаще процесс, тем выше эффект автоматизации'],
+  ['D', 'Длительность',  '0.25', 'чем дольше ручное выполнение, тем выше ROI'],
+  ['V', 'Вариативность', '0.20', 'ниже вариативность — проще автоматизировать'],
+  ['S', 'Структура',     '0.20', 'системные данные автоматизируются лучше встреч'],
 ];
 
 export default function Research() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Документация</h1>
-        <p className="mt-2 text-muted-foreground">
-          Источники, методология Aᵢ и нормативное обоснование через PMBoK 6.
-        </p>
+    <div>
+      {/* Page title */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>Документация</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Источники, методология показателя Ai и нормативная база — на каких исследованиях стоит работа и как процессы PM-команды отображаются в PMBoK 6.
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="pill">источников · {SOURCES.length}</span>
+          <span className="pill pill-accent">PMBoK 6</span>
+        </div>
       </div>
 
-      <Card className="border-border/50 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <LibraryBig className="h-5 w-5 text-primary" />
-            Источники
-          </CardTitle>
-          <CardDescription>Исследования, на которых основаны коэффициенты и проблематика приложения</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-border/40 bg-slate-50 text-left text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Источник</th>
-                  <th className="px-4 py-3 font-semibold">Выборка</th>
-                  <th className="px-4 py-3 font-semibold">Ключевой вывод</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30">
-                {SOURCES.map(([source, sample, insight]) => (
-                  <tr key={source}>
-                    <td className="px-4 py-3 font-semibold text-foreground">{source}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{sample}</td>
-                    <td className="px-4 py-3 text-foreground">{insight}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/50 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-primary" />
-            Методология показателя Aᵢ
-          </CardTitle>
-          <CardDescription>Aᵢ показывает, какие процессы выгоднее автоматизировать первыми</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-            <p className="text-center font-mono text-lg font-bold text-foreground">
-              Aᵢ = 0.35F + 0.25D + 0.20V + 0.20S
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-4">
-            {FORMULA_PARTS.map(([letter, name, weight, text]) => (
-              <div key={letter} className="rounded-lg border border-border/50 p-4">
-                <Badge variant="outline">{letter} · вес {weight}</Badge>
-                <p className="mt-3 font-semibold text-foreground">{name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{text}</p>
-              </div>
+      {/* Sources */}
+      <div className="sec-title">
+        <h2>Источники</h2>
+        <span className="sec-sub">исследования и бенчмарки</span>
+      </div>
+      <div className="card" style={{ paddingBottom: 0 }}>
+        <table className="t">
+          <thead><tr>
+            <th>Источник</th>
+            <th>Выборка</th>
+            <th>Ключевой вывод</th>
+          </tr></thead>
+          <tbody>
+            {SOURCES.map(([s, n, f]) => (
+              <tr key={s}>
+                <td style={{ fontWeight: 600 }}>{s}</td>
+                <td className="muted">{n}</td>
+                <td>{f}</td>
+              </tr>
             ))}
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-            <p className="font-semibold text-foreground">Пример расчёта</p>
-            <p className="mt-1 text-muted-foreground">
-              Если процесс имеет F=80, D=60, V=70, S=90, то Aᵢ = 0.35×80 + 0.25×60 + 0.20×70 + 0.20×90 = 75.
-              Такой процесс попадает в высокий приоритет автоматизации.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </tbody>
+        </table>
+      </div>
 
-      <Card className="border-border/50 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            Маппинг на PMBoK 6
-          </CardTitle>
-          <CardDescription>Связь PM-процессов приложения с нормативной базой управления проектами</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-border/40 bg-slate-50 text-left text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Процесс PM</th>
-                  <th className="px-4 py-3 font-semibold">Область знаний</th>
-                  <th className="px-4 py-3 font-semibold">Процесс PMBoK 6</th>
-                  <th className="px-4 py-3 font-semibold">Страница</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30">
-                {PMBOK_MAPPING.map(([process, area, pmbok, page]) => (
-                  <tr key={process}>
-                    <td className="px-4 py-3 font-semibold text-foreground">{process}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{area}</td>
-                    <td className="px-4 py-3 text-foreground">{pmbok}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{page}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Methodology */}
+      <div className="sec-title">
+        <h2>Методология Ai</h2>
+        <span className="sec-sub">взвешенный композитный индекс</span>
+      </div>
+      <div className="card card-pad">
+        <div style={{ padding: '28px 24px', background: 'var(--accent-soft)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 12, fontSize: 30, fontWeight: 700, letterSpacing: '-0.025em' }}>
+          <span style={{ color: 'var(--accent)' }}>Aᵢ</span>
+          <span style={{ color: 'var(--ink-muted)' }}>=</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.35</span> · F</span>
+          <span style={{ color: 'var(--ink-faint)' }}>+</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.25</span> · D</span>
+          <span style={{ color: 'var(--ink-faint)' }}>+</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.20</span> · V</span>
+          <span style={{ color: 'var(--ink-faint)' }}>+</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.20</span> · S</span>
+        </div>
+
+        <div className="grid-4" style={{ marginTop: 16, gap: 12 }}>
+          {FORMULA_PARTS.map(([l, n, w, d]) => (
+            <div key={l} style={{ padding: '14px 16px', background: 'var(--bg)', borderRadius: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>{l}</span>
+                <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>вес {w}</span>
+              </div>
+              <div style={{ marginTop: 6, fontSize: 14, fontWeight: 600 }}>{n}</div>
+              <div style={{ marginTop: 4, fontSize: 12.5, color: 'var(--ink-muted)', lineHeight: 1.5 }}>{d}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 20, padding: 18, background: 'var(--bg)', borderRadius: 12, borderLeft: '3px solid var(--accent)' }}>
+          <div className="eyebrow">Пример расчёта</div>
+          <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.6 }}>
+            Если F = 80, D = 60, V = 70, S = 90, то{' '}
+            <span style={{ background: 'var(--surface)', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>
+              Aᵢ = 0.35×80 + 0.25×60 + 0.20×70 + 0.20×90 = 75
+            </span>.
+            Такой процесс попадает в высокий приоритет автоматизации (Aᵢ ≥ 75).
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* PMBoK mapping */}
+      <div className="sec-title">
+        <h2>Маппинг на PMBoK 6</h2>
+        <span className="sec-sub">связь с нормативной базой</span>
+      </div>
+      <div className="card" style={{ paddingBottom: 0 }}>
+        <table className="t">
+          <thead><tr>
+            <th>Процесс PM</th>
+            <th>Область знаний</th>
+            <th>Процесс PMBoK 6</th>
+            <th style={{ textAlign: 'right' }}>Стр.</th>
+          </tr></thead>
+          <tbody>
+            {PMBOK_MAPPING.map(([p, a, b, pg]) => (
+              <tr key={p}>
+                <td style={{ fontWeight: 600 }}>{p}</td>
+                <td className="muted">{a}</td>
+                <td><span style={{ background: 'var(--accent-soft)', color: 'var(--accent-2)', padding: '3px 10px', borderRadius: 999, fontWeight: 600, fontSize: 12.5 }}>{b}</span></td>
+                <td className="num-cell muted">{pg}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ marginTop: 40, padding: '24px 0', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 12.5, color: 'var(--ink-muted)' }}>
+        <div>PM Process Analyzer · diploma edition · v 0.4.2</div>
+        <div>2026</div>
+      </div>
     </div>
   );
 }

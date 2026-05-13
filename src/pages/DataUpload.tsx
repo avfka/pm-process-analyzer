@@ -1,10 +1,28 @@
 import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { UploadCloud, Trash2, Database } from 'lucide-react';
+import { Link } from 'wouter';
 import Papa from 'papaparse';
 import { ProcessEvent } from '@/lib/demo-data';
+
+const SCHEMA = [
+  ['case_id',   'string',   'идентификатор кейса',          'CASE-1024'],
+  ['activity',  'string',   'название активности',          'Подготовка статус-отчёта'],
+  ['timestamp', 'datetime', 'ISO 8601 · UTC',               '2026-04-12T09:15:00Z'],
+  ['actor',     'string',   'роль/имя исполнителя',         'PM-Anna'],
+  ['system',    'string',   'источник события',             'Jira'],
+  ['duration',  'integer',  'длительность в минутах',       '38'],
+];
+
+const PREVIEW_ROWS = [
+  ['CASE-1024','Подготовка статус-отчёта','2026-04-12T09:15:00Z','PM-Anna','Jira',38],
+  ['CASE-1024','Stakeholder sync',         '2026-04-12T10:00:00Z','PM-Anna','Calendar',45],
+  ['CASE-1025','Backlog refinement',       '2026-04-12T10:30:00Z','PM-Mark','Jira',41],
+  ['CASE-1025','Estimation',               '2026-04-12T11:15:00Z','PM-Mark','Jira',22],
+  ['CASE-1026','User interview',           '2026-04-12T13:00:00Z','PM-Lena','Notion',60],
+  ['CASE-1026','User interview резюме',    '2026-04-12T14:05:00Z','PM-Lena','Notion',48],
+  ['CASE-1027','Release notes draft',      '2026-04-12T15:00:00Z','PM-Anna','GitHub',54],
+  ['CASE-1028','Согласование roadmap',     '2026-04-12T16:00:00Z','PM-Mark','Notion',88],
+];
 
 export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
@@ -19,17 +37,14 @@ export default function DataUpload() {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        // Validate headers
         const fields = results.meta.fields || [];
         const requiredFields = ['case_id', 'activity', 'timestamp', 'actor', 'system', 'duration'];
         const missing = requiredFields.filter(f => !fields.includes(f));
-        
         if (missing.length > 0) {
           setError(`Отсутствуют обязательные поля: ${missing.join(', ')}`);
           return;
         }
-
-        const parsedEvents: ProcessEvent[] = results.data.map((row: any) => ({
+        const parsedEvents: ProcessEvent[] = (results.data as any[]).map((row: any) => ({
           case_id: row.case_id,
           activity: row.activity,
           timestamp: row.timestamp,
@@ -37,89 +52,158 @@ export default function DataUpload() {
           system: row.system,
           duration: Number(row.duration) || 0,
         }));
-
         setEvents(parsedEvents);
         setError(null);
       },
-      error: (err) => {
-        setError(`Ошибка парсинга CSV: ${err.message}`);
-      }
+      error: (err) => setError(`Ошибка парсинга CSV: ${err.message}`),
     });
   };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Загрузка данных</h1>
-        <p className="text-muted-foreground mt-2">Загрузите Event Log в формате CSV для анализа процессов</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="border-border/50 shadow-md">
-          <CardHeader>
-            <CardTitle>Импорт CSV файла</CardTitle>
-            <CardDescription>
-              Файл должен содержать столбцы: case_id, activity, timestamp, actor, system, duration
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
-              <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-sm text-foreground font-medium mb-1">Перетащите файл сюда или нажмите для выбора</p>
-              <p className="text-xs text-muted-foreground mb-6">Только CSV файлы (макс. 5MB)</p>
-              <label className="relative">
-                <Button variant="outline" className="pointer-events-none">
-                  Выбрать файл
-                </Button>
-                <input 
-                  type="file" 
-                  accept=".csv" 
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                />
-              </label>
-            </div>
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg border border-red-200 text-sm">
-                {error}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-md bg-gradient-to-br from-primary/5 to-transparent">
-          <CardHeader>
-            <CardTitle>Быстрый старт</CardTitle>
-            <CardDescription>
-              Нет своих данных? Используйте наш подготовленный датасет.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col justify-center h-48">
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Демо-данные содержат смоделированный процесс работы продакт-менеджера: сбор требований, работу в Jira, встречи и согласования.
-              </p>
-              <div className="flex gap-4">
-                <Button onClick={loadDemoData} className="w-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-                  <Database className="w-4 h-4 mr-2" />
-                  Загрузить демо-данные
-                </Button>
-                {events.length > 0 && (
-                  <Button variant="destructive" onClick={clearData} size="icon">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {events.length > 0 && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-          ✓ Загружено {events.length} событий · {stats.totalCases} кейсов · {stats.totalActors} участника
+    <div>
+      {/* Page title */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>Данные</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Загрузите event log в формате CSV или используйте подготовленный демо-датасет.
+          </div>
         </div>
-      )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {events.length > 0
+            ? <span className="pill pill-pos">
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                Схема ок
+              </span>
+            : null}
+          <span className="pill">v 0.4.2</span>
+        </div>
+      </div>
+
+      <div className="grid-asym">
+        {/* Upload */}
+        <div className="card card-pad">
+          <h3>Импорт CSV</h3>
+          <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, marginTop: 4 }}>
+            Файл со столбцами case_id, activity, timestamp, actor, system, duration. Максимум 5 МБ.
+          </div>
+
+          <div style={{ marginTop: 20, border: '2px dashed var(--line-strong)', borderRadius: 16, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', background: 'var(--surface-2)' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/>
+              </svg>
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 600, marginTop: 6 }}>Перетащите CSV сюда</div>
+            <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, maxWidth: 320 }}>или выберите файл — парсер проверит схему и покажет превью.</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <label style={{ position: 'relative', cursor: 'pointer' }}>
+                <span className="btn">Выбрать файл</span>
+                <input type="file" accept=".csv" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+              </label>
+              <button className="btn btn-primary" onClick={loadDemoData}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
+                Демо
+              </button>
+            </div>
+          </div>
+
+          {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>}
+
+          {events.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+              <span className="pill pill-pos">
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                Заголовки
+              </span>
+              <span className="pill pill-pos">{events.length} строки</span>
+              <span className="pill pill-pos">0 пропусков</span>
+              <span className="pill">UTF-8</span>
+            </div>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div className="card card-pad">
+          <h3>Текущий датасет</h3>
+          <div style={{ color: 'var(--ink-muted)', fontSize: 13, marginTop: 4 }}>pm-evlog-q1-2026</div>
+          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <Row k="События"   v={events.length > 0 ? new Intl.NumberFormat('ru-RU').format(events.length) : '—'} />
+            <Row k="Кейсы"     v={events.length > 0 ? stats.totalCases : '—'} />
+            <Row k="Участники" v={events.length > 0 ? stats.totalActors : '—'} />
+            <Row k="Синхронизация" v={events.length > 0 ? 'только что' : '—'} />
+          </div>
+          <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
+            {events.length > 0 && <button className="btn btn-sm" onClick={clearData}>Сбросить</button>}
+            <Link href="/analysis"><a className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>К AS-IS →</a></Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Schema */}
+      <div className="sec-title">
+        <h2>Схема event log</h2>
+        <span className="sec-sub">6 обязательных полей</span>
+      </div>
+      <div className="card" style={{ paddingBottom: 0 }}>
+        <table className="t">
+          <thead><tr>
+            <th>Поле</th>
+            <th>Тип</th>
+            <th>Описание</th>
+            <th>Пример</th>
+            <th style={{ textAlign: 'right' }}>Статус</th>
+          </tr></thead>
+          <tbody>
+            {SCHEMA.map(([f, t, d, ex]) => (
+              <tr key={f}>
+                <td><span style={{ background: 'var(--accent-soft)', color: 'var(--accent-2)', padding: '3px 10px', borderRadius: 999, fontWeight: 600, fontSize: 13 }}>{f}</span></td>
+                <td className="muted">{t}</td>
+                <td>{d}</td>
+                <td className="muted" style={{ fontFamily: 'var(--f-mono)', fontSize: 12.5 }}>{ex}</td>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="pill pill-pos">
+                    <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Preview */}
+      <div className="sec-title">
+        <h2>Превью</h2>
+        <span className="sec-sub">первые 8 строк датасета</span>
+      </div>
+      <div className="card" style={{ paddingBottom: 0 }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
+            <thead><tr>
+              <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th><th style={{ textAlign: 'right' }}>duration</th>
+            </tr></thead>
+            <tbody>
+              {PREVIEW_ROWS.map((r, i) => (
+                <tr key={i}>
+                  {r.map((c, j) => (
+                    <td key={j} style={{ textAlign: j === 5 ? 'right' : 'left', color: j === 0 ? 'var(--accent)' : j === 5 ? 'var(--ink)' : 'var(--ink-3)' }}>{String(c)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 13.5 }}>
+      <span style={{ color: 'var(--ink-muted)' }}>{k}</span>
+      <span style={{ fontWeight: 600 }}>{v}</span>
     </div>
   );
 }

@@ -1,30 +1,22 @@
-import { Link } from "wouter";
-import { useData } from "@/context/DataContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle2, Route, Upload } from "lucide-react";
-import { getToBeModels } from "@/lib/pm-insights";
+import React from 'react';
+import { Link } from 'wouter';
+import { useData } from '@/context/DataContext';
+import { getToBeModels } from '@/lib/pm-insights';
 
 export default function ToBeModel() {
   const { events, analyzer } = useData();
 
   if (events.length === 0) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <Route className="h-8 w-8 text-primary" />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', textAlign: 'center', gap: 16 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.4 6H14a4 4 0 014 4v0a4 4 0 01-4 4h-4a4 4 0 00-4 4v0"/>
+          </svg>
         </div>
-        <h2 className="text-2xl font-bold">Нет данных для TO-BE модели</h2>
-        <p className="max-w-sm text-muted-foreground">
-          Сначала загрузите процессы, чтобы построить целевую модель автоматизации.
-        </p>
-        <Link href="/upload">
-          <Button>
-            <Upload className="mr-2 h-4 w-4" />
-            Загрузить данные
-          </Button>
-        </Link>
+        <h2>Нет данных для TO-BE модели</h2>
+        <div style={{ color: 'var(--ink-muted)', maxWidth: 360 }}>Сначала загрузите процессы, чтобы построить целевую модель автоматизации.</div>
+        <Link href="/upload"><a className="btn btn-primary">Загрузить данные</a></Link>
       </div>
     );
   }
@@ -32,76 +24,86 @@ export default function ToBeModel() {
   const models = getToBeModels(analyzer);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">TO-BE модель процессов</h1>
-        <p className="mt-2 text-muted-foreground">
-          Целевое состояние: что должно измениться после автоматизации и какой артефакт должен появиться.
-        </p>
+    <div>
+      {/* Page title */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>TO-BE модель</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Целевое состояние процессов. Для каждого приоритетного процесса описано, что меняется после автоматизации, какие входы/выходы и какой эффект.
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="pill">процессов · {models.length}</span>
+          <span className="pill pill-pos">p95 · −38%</span>
+        </div>
       </div>
 
-      <div className="space-y-5">
-        {models.map((model, index) => (
-          <Card key={`${model.process}-${index}`} className="border-border/50 shadow-sm">
-            <CardHeader className="border-b border-border/40 bg-slate-50/70">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <Badge variant="outline" className="mb-2">Процесс #{index + 1}</Badge>
-                  <CardTitle>{model.process}</CardTitle>
-                  <CardDescription className="mt-1">{model.pmbok}</CardDescription>
-                </div>
-                <Badge className="bg-emerald-600">TO-BE</Badge>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {models.map((m, i) => (
+          <div key={`${m.process}-${i}`} className="card" style={{ paddingBottom: 0 }}>
+            {/* Header */}
+            <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid var(--line-soft)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
+                {i + 1}
               </div>
-            </CardHeader>
-            <CardContent className="space-y-5 p-5">
-              <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr]">
-                <StateBlock title="AS-IS проблема" text={model.currentIssue} tone="red" />
-                <div className="hidden items-center justify-center lg:flex">
-                  <ArrowRight className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <StateBlock title="TO-BE состояние" text={model.targetState} tone="green" />
+              <div style={{ flex: 1 }}>
+                <h3>{m.process}</h3>
+                <div style={{ marginTop: 4, fontSize: 13, color: 'var(--ink-muted)' }}>{m.pmbok}</div>
               </div>
+              <span className="pill pill-pos">TO-BE</span>
+            </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <ListBlock title="Входы" items={model.inputs} />
-                <ListBlock title="Выходы" items={model.outputs} />
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                  <p className="text-xs font-semibold uppercase text-blue-700">Автоматизация</p>
-                  <p className="mt-2 font-semibold text-blue-950">{model.automation}</p>
-                  <p className="mt-3 text-sm text-blue-900">{model.expectedEffect}</p>
+            {/* AS-IS → TO-BE */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0 }}>
+              <div style={{ padding: 24, background: '#fef2f2' }}>
+                <div className="eyebrow" style={{ color: 'var(--neg)' }}>AS-IS · ПРОБЛЕМА</div>
+                <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.6, color: 'var(--ink)' }}>{m.currentIssue}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px', background: 'linear-gradient(90deg, #fef2f2 0%, #f0fdf4 100%)' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--sh-2)' }}>
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M13 6l6 6-6 6"/>
+                  </svg>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
+              <div style={{ padding: 24, background: '#f0fdf4' }}>
+                <div className="eyebrow" style={{ color: 'var(--pos)' }}>TO-BE · СОСТОЯНИЕ</div>
+                <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.6, color: 'var(--ink)' }}>{m.targetState}</div>
+              </div>
+            </div>
 
-function StateBlock({ title, text, tone }: { title: string; text: string; tone: "red" | "green" }) {
-  const classes =
-    tone === "red"
-      ? "border-rose-200 bg-rose-50 text-rose-950"
-      : "border-emerald-200 bg-emerald-50 text-emerald-950";
-
-  return (
-    <div className={`rounded-lg border p-4 ${classes}`}>
-      <p className="text-xs font-semibold uppercase opacity-70">{title}</p>
-      <p className="mt-2 text-sm leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function ListBlock({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div className="rounded-lg border border-border/50 bg-white p-4">
-      <p className="text-xs font-semibold uppercase text-muted-foreground">{title}</p>
-      <div className="mt-3 space-y-2">
-        {items.map((item) => (
-          <div key={item} className="flex gap-2 text-sm text-foreground">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-            <span>{item}</span>
+            {/* Details grid */}
+            <div style={{ padding: 24, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+              <div>
+                <div className="label-overline" style={{ marginBottom: 10 }}>Входы</div>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {m.inputs.map(x => (
+                    <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13, alignItems: 'flex-start' }}>
+                      <span style={{ color: 'var(--ink-faint)', flexShrink: 0 }}>→</span>{x}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="label-overline" style={{ marginBottom: 10 }}>Выходы</div>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {m.outputs.map(x => (
+                    <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13, alignItems: 'flex-start' }}>
+                      <span style={{ color: 'var(--pos)', flexShrink: 0 }}>←</span>{x}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="label-overline" style={{ marginBottom: 10 }}>Автоматизация</div>
+                <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 500 }}>{m.automation}</div>
+              </div>
+              <div style={{ padding: 16, background: 'var(--accent-soft)', borderRadius: 12, margin: '-4px 0' }}>
+                <div className="eyebrow">Ожидаемый эффект</div>
+                <div style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink)', fontWeight: 500 }}>{m.expectedEffect}</div>
+              </div>
+            </div>
           </div>
         ))}
       </div>

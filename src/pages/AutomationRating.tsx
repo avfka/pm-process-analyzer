@@ -1,272 +1,241 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { FileText, Route, TrendingUp, Zap } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatRub, getAutomationDetail } from '@/lib/pm-insights';
 
-const PRIORITY_CONFIG = {
-  Высокий: {
-    badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    bar: 'bg-emerald-500',
-    dot: 'bg-emerald-500',
-  },
-  Средний: {
-    badge: 'bg-amber-100 text-amber-800 border-amber-200',
-    bar: 'bg-amber-500',
-    dot: 'bg-amber-500',
-  },
-  Низкий: {
-    badge: 'bg-slate-100 text-slate-600 border-slate-200',
-    bar: 'bg-slate-400',
-    dot: 'bg-slate-400',
-  },
-} as const;
+const FORMULA_PARTS = [
+  ['F', 'Частота',       '0.35', 'чем чаще процесс, тем выше эффект автоматизации'],
+  ['D', 'Длительность',  '0.25', 'чем дольше ручное выполнение, тем выше ROI'],
+  ['V', 'Вариативность', '0.20', 'ниже вариативность — проще автоматизировать'],
+  ['S', 'Структура',     '0.20', 'системные данные автоматизируются лучше встреч'],
+];
 
-function AiScale({ score, priority }: { score: number; priority: 'Высокий' | 'Средний' | 'Низкий' }) {
-  const cfg = PRIORITY_CONFIG[priority];
+const RcTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
   return (
-    <div className="flex items-center gap-2 min-w-[140px]">
-      <span className="text-base font-bold text-foreground w-8 text-right">{score}</span>
-      <div className="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${cfg.bar}`}
-          style={{ width: `${score}%` }}
-        />
-      </div>
+    <div style={{ background: '#18181b', color: '#fafafa', padding: '8px 12px', borderRadius: 10, fontSize: 12, lineHeight: 1.5, boxShadow: '0 10px 28px rgba(0,0,0,0.18)', minWidth: 130 }}>
+      {label && <div style={{ fontSize: 11, color: '#a1a1aa', marginBottom: 4 }}>{label}</div>}
+      {payload.map((p: any, i: number) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+          <span style={{ color: '#d4d4d8' }}>{p.name}</span>
+          <span style={{ fontWeight: 600 }}>{p.value}</span>
+        </div>
+      ))}
     </div>
   );
-}
-
-const FACTOR_COLORS = {
-  freqScore: '#3b82f6',
-  durScore: '#8b5cf6',
-  varScore: '#10b981',
-  structScore: '#f59e0b',
 };
 
 export default function AutomationRating() {
   const { events, analyzer } = useData();
-  const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
+  const [selectedIdx, setSelectedIdx] = useState(0);
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <Zap className="w-8 h-8 text-primary" />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', textAlign: 'center', gap: 16 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l2.6 6 6.4.6-4.9 4.4 1.5 6.5L12 17l-5.6 3.5 1.5-6.5L3 9.6 9.4 9z"/></svg>
         </div>
-        <h2 className="text-2xl font-bold">Нет данных</h2>
-        <p className="text-muted-foreground max-w-sm">Загрузите данные, чтобы рассчитать показатель автоматизируемости.</p>
-        <Link href="/upload"><Button>Загрузить данные</Button></Link>
+        <h2>Нет данных</h2>
+        <div style={{ color: 'var(--ink-muted)', maxWidth: 360 }}>Загрузите данные, чтобы рассчитать показатель автоматизируемости.</div>
+        <Link href="/upload"><a className="btn btn-primary">Загрузить данные</a></Link>
       </div>
     );
   }
 
   const scores = analyzer.getAutomationScores();
-  const highCount = scores.filter((s) => s.priority === 'Высокий').length;
-  const midCount = scores.filter((s) => s.priority === 'Средний').length;
-  const selectedScore = scores.find((score) => score.activity === selectedActivity) ?? scores[0];
-  const selectedDetail = selectedScore ? getAutomationDetail(selectedScore, events) : null;
+  const selected = scores[selectedIdx] ?? scores[0];
+  const selectedDetail = selected ? getAutomationDetail(selected, events) : null;
+  const highCount = scores.filter(s => s.priority === 'Высокий').length;
+  const midCount  = scores.filter(s => s.priority === 'Средний').length;
+  const lowCount  = scores.filter(s => s.priority === 'Низкий').length;
 
-  const chartData = scores.slice(0, 10).map((s) => ({
-    name: s.activity.length > 18 ? s.activity.slice(0, 16) + '…' : s.activity,
-    fullName: s.activity,
-    'Частота (×0.35)': Math.round(s.freqScore * 0.35),
-    'Длительность (×0.25)': Math.round(s.durScore * 0.25),
-    'Вариативность (×0.20)': Math.round(s.varScore * 0.20),
-    'Структура (×0.20)': Math.round(s.structScore * 0.20),
+  const chartData = scores.slice(0, 10).map(s => ({
+    name: s.activity.length > 14 ? s.activity.slice(0, 12) + '…' : s.activity,
+    full: s.activity,
+    F: Math.round(s.freqScore * 0.35),
+    D: Math.round(s.durScore * 0.25),
+    V: Math.round(s.varScore * 0.20),
+    S: Math.round(s.structScore * 0.20),
     total: s.score,
-    priority: s.priority,
   }));
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Рейтинг автоматизации</h1>
-        <p className="text-muted-foreground mt-2">
-          Показатель Ai рассчитывается по формуле: 0.35 · Частота + 0.25 · Длительность + 0.20 · Вариативность + 0.20 · Структура
-        </p>
+    <div>
+      {/* Page title */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>Ai рейтинг</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Композитный показатель автоматизируемости. Чем выше Ai — тем приоритетнее автоматизация.
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="pill pill-accent">высокий · {highCount}</span>
+          <span className="pill pill-warn">средний · {midCount}</span>
+          <span className="pill">низкий · {lowCount}</span>
+        </div>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="border-emerald-200 bg-emerald-50/50 shadow-sm">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-              <Zap className="w-5 h-5 text-emerald-600" />
+      {/* Formula card */}
+      <div className="card card-pad">
+        <div className="eyebrow">Формула</div>
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8, padding: '20px 24px', background: 'var(--accent-soft)', borderRadius: 14, fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>
+          <span style={{ color: 'var(--accent)' }}>Aᵢ</span>
+          <span style={{ color: 'var(--ink-muted)' }}>=</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.35</span> · F</span>
+          <span style={{ color: 'var(--ink-faint)' }}>+</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.25</span> · D</span>
+          <span style={{ color: 'var(--ink-faint)' }}>+</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.20</span> · V</span>
+          <span style={{ color: 'var(--ink-faint)' }}>+</span>
+          <span><span style={{ color: 'var(--accent)' }}>0.20</span> · S</span>
+        </div>
+        <div className="grid-4" style={{ marginTop: 16 }}>
+          {FORMULA_PARTS.map(([l, n, w, d]) => (
+            <div key={l} style={{ padding: '12px 4px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>{l}</span>
+                <span style={{ fontSize: 12, color: 'var(--ink-muted)', fontWeight: 600 }}>вес {w}</span>
+              </div>
+              <div style={{ marginTop: 4, fontSize: 14, fontWeight: 600 }}>{n}</div>
+              <div style={{ marginTop: 4, fontSize: 12.5, color: 'var(--ink-muted)', lineHeight: 1.5 }}>{d}</div>
             </div>
-            <div>
-              <p className="text-xs text-emerald-700 font-medium">Высокий приоритет (Ai ≥ 75)</p>
-              <p className="text-2xl font-bold text-emerald-800">{highCount}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-amber-200 bg-amber-50/50 shadow-sm">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-xs text-amber-700 font-medium">Средний приоритет (50–74)</p>
-              <p className="text-2xl font-bold text-amber-800">{midCount}</p>
-            </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       </div>
 
-      {/* Stacked bar chart */}
-      <Card className="shadow-md border-border/50">
-        <CardHeader>
-          <CardTitle>Топ‑10: структура показателя Ai</CardTitle>
-          <CardDescription>Вклад каждого фактора в итоговый балл (взвешенные значения)</CardDescription>
-        </CardHeader>
-        <CardContent className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis
-                dataKey="name"
-                angle={-40}
-                textAnchor="end"
-                height={80}
-                tick={{ fontSize: 11 }}
-              />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-              <Tooltip
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
-                formatter={(value: number, name: string) => [`${value} балл.`, name]}
-              />
-              <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} />
-              <Bar dataKey="Частота (×0.35)" stackId="a" fill={FACTOR_COLORS.freqScore} />
-              <Bar dataKey="Длительность (×0.25)" stackId="a" fill={FACTOR_COLORS.durScore} />
-              <Bar dataKey="Вариативность (×0.20)" stackId="a" fill={FACTOR_COLORS.varScore} />
-              <Bar dataKey="Структура (×0.20)" stackId="a" fill={FACTOR_COLORS.structScore} radius={[4, 4, 0, 0]} />
+      {/* Stacked chart */}
+      <div className="sec-title">
+        <h2>Структура показателя</h2>
+        <span className="sec-sub">вклад каждого фактора · топ-10</span>
+      </div>
+      <div className="card" style={{ paddingBottom: 0 }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
+          <h3>Stacked Ai · 0–100</h3>
+        </div>
+        <div style={{ padding: 24 }}>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 60 }} barCategoryGap={20}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} tickLine={false} axisLine={false} angle={-30} textAnchor="end" height={70} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} tickLine={false} axisLine={false} />
+              <Tooltip content={<RcTooltip />} cursor={{ fill: 'rgba(34, 158, 217, 0.06)' }} />
+              <Bar dataKey="F" name="F · Частота"        stackId="a" fill="#229ED9" />
+              <Bar dataKey="D" name="D · Длительность"   stackId="a" fill="#7AC9E9" />
+              <Bar dataKey="V" name="V · Вариативность"  stackId="a" fill="#CFE9F8" />
+              <Bar dataKey="S" name="S · Структура"       stackId="a" fill="#7c3aed" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        {/* Detailed table */}
-        <Card className="shadow-md border-border/50 overflow-hidden">
-          <CardHeader className="border-b border-border/10">
-            <CardTitle>Детальный рейтинг автоматизации</CardTitle>
-            <CardDescription>Нажмите на строку, чтобы увидеть TO-BE модель и экономику</CardDescription>
-          </CardHeader>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-muted-foreground text-xs border-b border-border/40">
-                <tr>
-                  <th className="px-4 py-3 font-semibold w-6">#</th>
-                  <th className="px-4 py-3 font-semibold">Процесс</th>
-                  <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">
-                    <span className="text-blue-600">●</span> Частота
-                    <br /><span className="font-normal text-muted-foreground/70 text-[10px]">вес 0.35</span>
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">
-                    <span className="text-violet-600">●</span> Ср. длит.
-                    <br /><span className="font-normal text-muted-foreground/70 text-[10px]">мин · вес 0.25</span>
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-left whitespace-nowrap min-w-[180px]">
-                    Ai
-                  </th>
-                  <th className="px-4 py-3 font-semibold">Приоритет</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30 bg-white">
-                {scores.map((score, i) => {
-                  const cfg = PRIORITY_CONFIG[score.priority];
-                  const isSelected = selectedScore?.activity === score.activity;
-                  return (
-                    <tr
-                      key={i}
-                      onClick={() => setSelectedActivity(score.activity)}
-                      className={`cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : 'hover:bg-slate-50/60'}`}
-                    >
-                      <td className="px-4 py-3 text-muted-foreground font-medium">{i + 1}</td>
-                      <td className="px-4 py-3 font-semibold text-foreground max-w-[200px]">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
-                          {score.activity}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="text-foreground font-medium">{score.frequency}</div>
-                        <div className="text-[11px] text-blue-500 font-semibold">({score.freqScore})</div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="text-foreground font-medium">{score.avgDuration} мин</div>
-                        <div className="text-[11px] text-violet-500 font-semibold">({score.durScore})</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <AiScale score={score.score} priority={score.priority} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge className={`${cfg.badge} border text-xs font-semibold`}>
-                          {score.priority}
-                        </Badge>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+            {[['F · Частота','#229ED9'],['D · Длительность','#7AC9E9'],['V · Вариативность','#CFE9F8'],['S · Структура','#7c3aed']].map(([n,c]) => (
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 12, height: 12, background: c, borderRadius: 4 }} />
+                <span style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{n}</span>
+              </div>
+            ))}
           </div>
-        </Card>
+        </div>
+      </div>
 
-        {selectedScore && selectedDetail && (
-          <Card className="shadow-md border-primary/20 overflow-hidden">
-            <CardHeader className="border-b border-border/30 bg-primary/5">
-              <Badge variant="outline" className="w-fit bg-white">Выбранный процесс</Badge>
-              <CardTitle className="text-lg">{selectedScore.activity}</CardTitle>
-              <CardDescription>Ai = {selectedScore.score} · {selectedScore.priority} приоритет</CardDescription>
-            </CardHeader>
-            <CardContent className="p-5 space-y-4">
-              <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Route className="w-4 h-4 text-blue-700" />
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">TO-BE описание</p>
-                </div>
-                <p className="text-sm leading-relaxed text-blue-950">{selectedDetail.toBe}</p>
+      {/* Detail table + card */}
+      <div className="sec-title">
+        <h2>Детальный рейтинг</h2>
+        <span className="sec-sub">кликните строку — откроется детальная карточка</span>
+      </div>
+      <div className="grid-sidebar-r">
+        <div className="card" style={{ paddingBottom: 0 }}>
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
+            <h3>Все процессы</h3>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>{scores.length} процессов · сортировка по Ai ↓</div>
+          </div>
+          <table className="t">
+            <thead><tr>
+              <th>Процесс</th>
+              <th style={{ textAlign: 'right' }}>freq</th>
+              <th style={{ textAlign: 'right' }}>dur</th>
+              <th style={{ width: 140 }}>Ai</th>
+              <th>приоритет</th>
+            </tr></thead>
+            <tbody>
+              {scores.map((s, i) => {
+                const active = i === selectedIdx;
+                return (
+                  <tr key={s.activity} className={active ? 'active' : ''} onClick={() => setSelectedIdx(i)} style={{ cursor: 'pointer' }}>
+                    <td>
+                      <div style={{ fontWeight: 500, fontSize: 13.5 }}>{s.activity}</div>
+                      <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>F·{s.freqScore} D·{s.durScore} V·{s.varScore} S·{s.structScore}</div>
+                    </td>
+                    <td className="num-cell">{s.frequency}</td>
+                    <td className="num-cell muted">{Math.round(s.avgDuration)}м</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div className="bar" style={{ width: 80 }}>
+                          <span style={{ width: `${s.score}%`, background: s.priority === 'Высокий' ? 'var(--accent)' : s.priority === 'Средний' ? '#f59e0b' : 'var(--ink-faint)' }} />
+                        </div>
+                        <span className="semibold" style={{ fontSize: 14, width: 24, textAlign: 'right' }}>{s.score}</span>
+                      </div>
+                    </td>
+                    <td><span className={'pill ' + (s.priority === 'Высокий' ? 'pill-accent' : s.priority === 'Средний' ? 'pill-warn' : '')}>{s.priority}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {selected && selectedDetail && (
+          <div className="card card-pad" style={{ position: 'sticky', top: 80, alignSelf: 'flex-start' }}>
+            <span className={'pill ' + (selected.priority === 'Высокий' ? 'pill-accent' : selected.priority === 'Средний' ? 'pill-warn' : '')}>{selected.priority} приоритет</span>
+            <h3 style={{ marginTop: 10, fontSize: 20 }}>{selected.activity}</h3>
+            <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span className="num-xl" style={{ color: 'var(--accent)', fontSize: 56 }}>{selected.score}</span>
+              <span style={{ color: 'var(--ink-muted)', fontSize: 13 }}>Ai · 0–100</span>
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              <div className="label-overline" style={{ marginBottom: 10 }}>Компоненты</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {([
+                  ['F', 'Частота',        selected.freqScore,   0.35, '#229ED9'],
+                  ['D', 'Длительность',   selected.durScore,    0.25, '#7AC9E9'],
+                  ['V', 'Вариативность',  selected.varScore,    0.20, '#CFE9F8'],
+                  ['S', 'Структура',       selected.structScore, 0.20, '#7c3aed'],
+                ] as [string, string, number, number, string][]).map(([k, n, v, w, c]) => (
+                  <div key={k}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                      <span style={{ fontSize: 13 }}><span className="bold" style={{ color: c }}>{k}</span> · {n}</span>
+                      <span className="muted" style={{ fontSize: 12 }}>{v} × {w}</span>
+                    </div>
+                    <div className="bar"><span style={{ width: `${v}%`, background: c }} /></div>
+                  </div>
+                ))}
               </div>
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="w-4 h-4 text-emerald-700" />
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Экономия</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-emerald-700">AS-IS</p>
-                    <p className="font-bold text-emerald-950">{selectedDetail.asIsWeekly} мин/нед</p>
-                  </div>
-                  <div>
-                    <p className="text-emerald-700">TO-BE</p>
-                    <p className="font-bold text-emerald-950">{selectedDetail.toBeWeekly} мин/нед</p>
-                  </div>
-                  <div>
-                    <p className="text-emerald-700">Снижение</p>
-                    <p className="font-bold text-emerald-950">−{selectedDetail.savingPercent}%</p>
-                  </div>
-                  <div>
-                    <p className="text-emerald-700">В деньгах</p>
-                    <p className="font-bold text-emerald-950">~{formatRub(selectedDetail.monthlyRub)}/мес</p>
-                  </div>
-                </div>
+            </div>
+
+            <div style={{ marginTop: 20, padding: 14, background: 'var(--accent-soft)', borderRadius: 12 }}>
+              <div className="eyebrow">TO-BE</div>
+              <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.55, color: 'var(--ink-3)' }}>{selectedDetail.toBe}</div>
+            </div>
+
+            <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--pos-tint)', borderRadius: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pos)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Экономия</div>
+              <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
+                <div><span style={{ color: 'var(--ink-muted)' }}>AS-IS</span><br /><strong>{selectedDetail.asIsWeekly} мин/нед</strong></div>
+                <div><span style={{ color: 'var(--ink-muted)' }}>TO-BE</span><br /><strong>{selectedDetail.toBeWeekly} мин/нед</strong></div>
+                <div><span style={{ color: 'var(--ink-muted)' }}>Снижение</span><br /><strong>−{selectedDetail.savingPercent}%</strong></div>
+                <div><span style={{ color: 'var(--ink-muted)' }}>В деньгах</span><br /><strong>~{formatRub(selectedDetail.monthlyRub)}/мес</strong></div>
               </div>
-              <div className="rounded-xl border border-violet-100 bg-violet-50 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="w-4 h-4 text-violet-700" />
-                  <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">PMBoK</p>
-                </div>
-                <p className="text-sm font-semibold text-violet-950">{selectedDetail.pmbok}</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            <div style={{ marginTop: 16, fontSize: 12.5, color: 'var(--ink-muted)', padding: '10px 14px', background: 'var(--bg)', borderRadius: 10 }}>
+              <strong style={{ color: 'var(--violet)' }}>PMBoK</strong><br />{selectedDetail.pmbok}
+            </div>
+
+            <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+              <Link href="/to-be"><a className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>В TO-BE →</a></Link>
+            </div>
+          </div>
         )}
       </div>
     </div>

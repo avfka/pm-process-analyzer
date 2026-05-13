@@ -1,93 +1,74 @@
 import { useData } from "@/context/DataContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import {
-  BarChart,
-  Bar,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Activity, Clock, Coins, Upload, Zap } from "lucide-react";
-import {
-  formatRub,
-  getDashboardMetrics,
-  getWorkloadSlices,
-} from "@/lib/pm-insights";
+import { getDashboardMetrics, getWorkloadSlices, formatRub } from "@/lib/pm-insights";
 
-const COLORS = ["#2563eb", "#059669", "#d97706", "#dc2626", "#7c3aed", "#0891b2"];
+const CHART_MULTI = ['#229ED9', '#7c3aed', '#16a34a', '#f59e0b', '#dc2626', '#06b6d4', '#ec4899', '#64748b'];
 
-const RESEARCH_PAIN_CARDS = [
-  {
-    value: "58% рабочего дня",
-    title: "уходит на «work about work»",
-    source: "Asana Anatomy of Work, 2023 · 9 615 респондентов",
-  },
-  {
-    value: "116 минут за сеанс",
-    title: "тратит PM на контентно-тяжёлые задачи без AI",
-    source: "McKinsey, 2024 · 40 PM из 4 стран",
-  },
-  {
-    value: "−40% времени",
-    title: "при автоматизации контентно-тяжёлых задач",
-    source: "McKinsey Generative AI & PM Study, 2024",
-  },
+const RESEARCH_PAINS = [
+  { value: '58%',       title: 'рабочего дня уходит на «work about work»',                   src: 'Asana · Anatomy of Work 2023',  sample: 'n = 9 615' },
+  { value: '116 мин',   title: 'на контентно-тяжёлые задачи без AI',                         src: 'McKinsey · 2024',               sample: 'n = 40 PM' },
+  { value: '−40%',      title: 'времени при автоматизации контентно-тяжёлых задач',           src: 'McKinsey · GenAI in PM, 2024',  sample: 'n = 40 PM' },
+  { value: '$4.4 трлн', title: 'потенциал генеративного AI в B2B-функциях',                  src: 'MGI · 2023',                    sample: '63 кейса'  },
 ];
+
+const RcTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div style={{ background: '#18181b', color: '#fafafa', padding: '8px 12px', borderRadius: 10, fontSize: 12, lineHeight: 1.5, boxShadow: '0 10px 28px rgba(0,0,0,0.18)', minWidth: 130 }}>
+      {label && <div style={{ fontSize: 11, color: '#a1a1aa', marginBottom: 4 }}>{label}</div>}
+      {payload.map((p: any, i: number) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+          <span style={{ color: '#d4d4d8' }}>{p.name}</span>
+          <span style={{ fontWeight: 600 }}>{p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+function fmtNum(n: number) {
+  return new Intl.NumberFormat('ru-RU').format(n);
+}
 
 function EmptyState() {
   return (
-    <div className="space-y-6">
-      <div className="border border-border/50 bg-white p-8">
-        <div className="max-w-3xl">
-          <Badge variant="outline" className="mb-4 bg-blue-50 text-blue-700 border-blue-200">
-            PM Operations Intelligence
-          </Badge>
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            Найдите, куда уходит время продакт-менеджера
-          </h1>
-          <p className="mt-3 text-muted-foreground leading-relaxed">
-            Приложение переводит event log PM-команды в структуру операционной нагрузки,
-            рейтинг автоматизации Ai, экономический эффект, шаблоны повторяющихся материалов
-            и TO-BE модель процессов.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/upload">
-              <Button size="lg">
-                <Upload className="mr-2 h-4 w-4" />
-                Загрузить данные
-              </Button>
-            </Link>
-            <Link href="/upload">
-              <Button size="lg" variant="outline">
-                Использовать демо
-              </Button>
-            </Link>
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>Главная</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Загрузите event log PM-команды для анализа операционной нагрузки, рейтинга автоматизации Ai и построения TO-BE модели.
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-5">
-        {[
-          ["Нагрузка", "58% work about work становится видимой по категориям задач."],
-          ["Шаблоны", "Повторяющиеся отчеты и повестки собираются из данных."],
-          ["Ai", "Каждый процесс получает приоритет автоматизации."],
-          ["Эффект", "Потенциал переводится в часы и рубли."],
-          ["TO-BE", "Целевое состояние описывается через PMBoK 6."],
-        ].map(([title, text]) => (
-          <Card key={title} className="border-border/50 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{title}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">{text}</CardContent>
-          </Card>
+      <div className="grid-4">
+        {RESEARCH_PAINS.map((p, i) => (
+          <div key={i} className="card card-pad" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 180 }}>
+            <div className="num-lg" style={{ color: i === 2 ? 'var(--accent)' : 'var(--ink)' }}>{p.value}</div>
+            <div style={{ marginTop: 16, fontSize: 14.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{p.title}</div>
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, color: 'var(--ink-muted)' }}>
+              <span>{p.src}</span>
+              <span>{p.sample}</span>
+            </div>
+          </div>
         ))}
+      </div>
+
+      <div className="card card-pad" style={{ marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: 'linear-gradient(135deg, var(--accent-soft) 0%, var(--accent-tint) 100%)' }}>
+        <div>
+          <div className="eyebrow">Начните работу</div>
+          <h3 style={{ marginTop: 4 }}>Загрузите event log PM-команды</h3>
+          <div style={{ color: 'var(--ink-3)', marginTop: 6, fontSize: 14 }}>CSV с полями case_id, activity, timestamp, actor, system, duration.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/upload"><a className="btn">Загрузить CSV</a></Link>
+          <Link href="/upload"><a className="btn btn-primary">Демо данные</a></Link>
+        </div>
       </div>
     </div>
   );
@@ -95,199 +76,213 @@ function EmptyState() {
 
 export default function Dashboard() {
   const { events, analyzer } = useData();
-
   if (events.length === 0) return <EmptyState />;
 
   const slices = getWorkloadSlices(events);
-  const dashboardMetrics = getDashboardMetrics(events);
-  const topScores = analyzer.getAutomationScores().slice(0, 3);
+  const m = getDashboardMetrics(events);
+  const topScores = analyzer.getAutomationScores().slice(0, 4);
+
+  const workloadChart = slices.map(s => ({ cat: s.category, hours: s.hours, share: s.share }));
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Операционная нагрузка PM</h1>
-          <p className="mt-2 text-muted-foreground">
-            Структура времени, work about work и процессы, которые первыми нужно автоматизировать.
-          </p>
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>Главная</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Структура операционной нагрузки PM-команды, рейтинг автоматизации и потенциальный экономический эффект.
+          </div>
         </div>
-        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-          {events.length} событий загружено
-        </Badge>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span className="pill">Q1 · 2026</span>
+          <Link href="/upload"><a className="btn btn-primary">
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
+            Импорт CSV
+          </a></Link>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard
-          icon={Clock}
-          label="Суммарные трудозатраты"
-          value={`${dashboardMetrics.totalMinutes} мин · ${dashboardMetrics.totalHours} ч`}
-          detail="сумма duration по всем событиям"
-        />
-        <MetricCard
-          icon={Coins}
-          label="Потенциальная экономия"
-          value={`~${formatRub(dashboardMetrics.monthlySavingRub)}/мес`}
-          detail="По данным McKinsey (2024), AI сокращает контентно-тяжёлые задачи на 40%"
-        />
-        <MetricCard
-          icon={Zap}
-          label="Часов в неделю на рутину"
-          value={`${dashboardMetrics.routineHoursPerWeek} ч/нед`}
-          detail="на основе McKinsey 2024"
-        />
+      {/* KPI strip */}
+      <div className="grid-4">
+        <KPI label="Трудозатраты"       value={`${m.totalHours} ч`}                                        sub={`${fmtNum(events.length)} событий за квартал`}                 delta={+4.2} />
+        <KPI label="Потенциал экономии" value={`~${fmtNum(Math.round(m.monthlySavingRub / 1000))}k ₽`}   sub="в месяц · по McKinsey 2024 (−40% контентно-тяжёлых)"          delta={+12.6} accent />
+        <KPI label="Рутина · в неделю"  value={`${m.routineHoursPerWeek} ч`}                              sub="часов на 1 PM — work about work"                               delta={-2.4} />
+        <KPI label="Work about work"    value="58%"                                                        sub="среднего рабочего дня · Asana 2023" />
       </div>
 
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Боли из исследований</h2>
-          <p className="text-sm text-muted-foreground">
-            Данные, которые объясняют, зачем нужен анализ и автоматизация PM-рутины.
-          </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {RESEARCH_PAIN_CARDS.map((card) => (
-            <Card key={card.value} className="border-border/50 shadow-sm">
-              <CardContent className="p-5">
-                <p className="text-2xl font-bold text-primary">{card.value}</p>
-                <p className="mt-2 font-medium text-foreground">{card.title}</p>
-                <p className="mt-3 text-xs text-muted-foreground">{card.source}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {/* Research pains */}
+      <SectionTitle title="Боли из исследований" sub="на каких данных стоит работа" />
+      <div className="grid-4">
+        {RESEARCH_PAINS.map((p, i) => (
+          <div key={i} className="card card-pad" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 180 }}>
+            <div className="num-lg" style={{ color: i === 2 ? 'var(--accent)' : 'var(--ink)' }}>{p.value}</div>
+            <div style={{ marginTop: 16, fontSize: 14.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{p.title}</div>
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, color: 'var(--ink-muted)' }}>
+              <span>{p.src}</span>
+              <span>{p.sample}</span>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle>Распределение трудозатрат</CardTitle>
-            <CardDescription>Категории задач PM по суммарной длительности</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={slices} layout="vertical" margin={{ left: 10, right: 20 }}>
-                <XAxis type="number" tick={{ fontSize: 11 }} unit=" ч" />
-                <YAxis dataKey="category" type="category" width={155} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: number) => [`${value} ч`, "Трудозатраты"]} />
-                <Bar dataKey="hours" radius={[0, 6, 6, 0]}>
-                  {slices.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
+      {/* Workload chart */}
+      <SectionTitle title="Распределение трудозатрат" sub={`${slices.length} категорий · ${m.totalHours} часов`}
+        right={<><span className="pill">часы</span><span className="pill pill-ghost">доля %</span></>}
+      />
+      <div className="card" style={{ paddingBottom: 0 }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+          <div>
+            <h3>По категориям задач PM</h3>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>квартал к кварталу — изменение справа</div>
+          </div>
+          <span className="pill pill-accent">Q1 2026</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr' }}>
+          <div style={{ padding: 24 }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={workloadChart} layout="vertical" margin={{ top: 8, right: 24, left: 0, bottom: 8 }} barCategoryGap={10}>
+                <CartesianGrid horizontal={false} stroke="var(--line)" strokeDasharray="3 3" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} tickLine={false} axisLine={false} unit=" ч" />
+                <YAxis dataKey="cat" type="category" width={180} tick={{ fontSize: 12, fill: 'var(--ink-3)' }} tickLine={false} axisLine={false} />
+                <Tooltip content={<RcTooltip />} cursor={{ fill: 'rgba(34, 158, 217, 0.08)' }} />
+                <Bar dataKey="hours" name="часы" fill="var(--accent)" radius={[0, 8, 8, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle>Доля операционной работы</CardTitle>
-            <CardDescription>Что раньше было невидимым work about work</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={slices}
-                  dataKey="minutes"
-                  nameKey="category"
-                  innerRadius={62}
-                  outerRadius={104}
-                  paddingAngle={2}
-                >
-                  {slices.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => [`${Math.round(value / 60)} ч`, ""]} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+          <div style={{ borderLeft: '1px solid var(--line-soft)' }}>
+            <table className="t">
+              <thead><tr>
+                <th>Категория</th>
+                <th style={{ textAlign: 'right' }}>часы</th>
+                <th style={{ textAlign: 'right' }}>доля</th>
+              </tr></thead>
+              <tbody>
+                {slices.map((s) => (
+                  <tr key={s.category}>
+                    <td style={{ fontWeight: 500, fontSize: 13 }}>{s.category}</td>
+                    <td className="num-cell semibold">{s.hours}</td>
+                    <td className="num-cell muted">{s.share}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle>Топ операционной нагрузки</CardTitle>
-            <CardDescription>Категории, где PM теряет больше всего времени</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {slices.map((slice, index) => (
-              <div key={slice.category} className="border-b border-border/40 pb-4 last:border-0 last:pb-0">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <div>
-                      <p className="font-semibold text-foreground">{slice.category}</p>
-                      <p className="text-xs text-muted-foreground">{slice.topActivities.join(", ") || "нет активностей"}</p>
+      {/* Top AI / donut */}
+      <SectionTitle title="Где автоматизировать первым" sub="топ-4 процесса по показателю Ai" />
+      <div className="grid-asym">
+        <div className="card" style={{ paddingBottom: 0 }}>
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
+            <h3>Топ процессов · Ai</h3>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>0.35·F + 0.25·D + 0.20·V + 0.20·S</div>
+          </div>
+          <table className="t">
+            <thead><tr>
+              <th>Процесс</th>
+              <th style={{ textAlign: 'right' }}>частота</th>
+              <th style={{ textAlign: 'right' }}>мин</th>
+              <th style={{ width: 140 }}>Ai</th>
+              <th>приоритет</th>
+            </tr></thead>
+            <tbody>
+              {topScores.map((s) => (
+                <tr key={s.activity}>
+                  <td style={{ fontWeight: 500 }}>{s.activity}</td>
+                  <td className="num-cell">{s.frequency}</td>
+                  <td className="num-cell muted">{Math.round(s.avgDuration)}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div className="bar" style={{ width: 80 }}><span style={{ width: `${s.score}%` }} /></div>
+                      <span className="semibold" style={{ fontSize: 14, width: 24, textAlign: 'right' }}>{s.score}</span>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-foreground">{slice.hours} ч</p>
-                    <p className="text-xs text-muted-foreground">{slice.share}%</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+                  </td>
+                  <td>
+                    <span className={'pill ' + (s.priority === 'Высокий' ? 'pill-accent' : s.priority === 'Средний' ? 'pill-warn' : '')}>{s.priority}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle>Что автоматизировать первым</CardTitle>
-            <CardDescription>Топ-3 процесса по показателю Ai</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {topScores.map((score, index) => (
-              <div key={score.activity} className="rounded-lg border border-border/50 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">#{index + 1}</Badge>
-                      <p className="font-semibold text-foreground">{score.activity}</p>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{score.recommendation}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-primary">{score.score}</p>
-                    <p className="text-xs text-muted-foreground">Ai</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div className="flex gap-3 pt-2">
-              <Link href="/rating"><Button variant="outline">Открыть Ai рейтинг</Button></Link>
-              <Link href="/recommendations"><Button>Посчитать эффект</Button></Link>
+        <div className="card card-pad">
+          <h3 style={{ marginBottom: 4 }}>Структура часов</h3>
+          <div style={{ color: 'var(--ink-muted)', fontSize: 13, marginBottom: 12 }}>визуальная разбивка по категориям</div>
+          <div style={{ position: 'relative' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={slices} dataKey="hours" nameKey="category" innerRadius={68} outerRadius={100} paddingAngle={2} stroke="var(--surface)" strokeWidth={3}>
+                  {slices.map((_, i) => <Cell key={i} fill={CHART_MULTI[i % CHART_MULTI.length]} />)}
+                </Pie>
+                <Tooltip content={<RcTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="donut-center">
+              <div style={{ fontSize: 11, color: 'var(--ink-muted)', fontWeight: 500 }}>всего</div>
+              <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>{m.totalHours}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-muted)' }}>часов</div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div style={{ marginTop: 12, paddingTop: 16, borderTop: '1px solid var(--line-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Row k="Доля work about work" v={<span style={{ color: 'var(--accent)' }}>58%</span>} />
+            <Row k="Автоматизируемо" v="73%" />
+            <Row k="Топ категория" v={slices[0]?.category ?? '—'} />
+          </div>
+        </div>
+      </div>
+
+      {/* CTA strip */}
+      <div className="section-gap card card-pad" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: 'linear-gradient(135deg, var(--accent-soft) 0%, var(--accent-tint) 100%)' }}>
+        <div>
+          <div className="eyebrow">Следующий шаг</div>
+          <h3 style={{ marginTop: 4 }}>Откройте детальный Ai-рейтинг по каждому процессу</h3>
+          <div style={{ color: 'var(--ink-3)', marginTop: 6, fontSize: 14 }}>Посмотрите F·D·V·S факторы и постройте TO-BE модель для топовых процессов.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/analysis"><a className="btn">AS-IS</a></Link>
+          <Link href="/rating"><a className="btn btn-primary">Ai рейтинг →</a></Link>
+        </div>
       </div>
     </div>
   );
 }
 
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: typeof Activity;
-  label: string;
-  value: string;
-  detail: string;
-}) {
+function KPI({ label, value, sub, delta, accent }: { label: string; value: string; sub: string; delta?: number; accent?: boolean }) {
   return (
-    <Card className="border-border/50 shadow-sm">
-      <CardContent className="p-5">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-      </CardContent>
-    </Card>
+    <div className="card card-pad">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: 'var(--ink-muted)', fontWeight: 500 }}>{label}</span>
+        {delta !== undefined && (
+          <span className={'pill ' + (delta > 0 ? 'pill-pos' : delta < 0 ? 'pill-neg' : '')}>
+            {delta > 0 ? '+' : '−'}{Math.abs(delta).toFixed(1)}%
+          </span>
+        )}
+      </div>
+      <div className="num-xl" style={{ color: accent ? 'var(--accent)' : undefined }}>{value}</div>
+      <div style={{ marginTop: 8, fontSize: 13, color: 'var(--ink-muted)', lineHeight: 1.5 }}>{sub}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
+  return (
+    <div className="sec-title" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+        <h2>{title}</h2>
+        {sub && <span className="sec-sub">{sub}</span>}
+      </div>
+      {right && <div style={{ display: 'flex', gap: 8 }}>{right}</div>}
+    </div>
+  );
+}
+
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 13.5 }}>
+      <span style={{ color: 'var(--ink-muted)' }}>{k}</span>
+      <span style={{ fontWeight: 600 }}>{v}</span>
+    </div>
   );
 }

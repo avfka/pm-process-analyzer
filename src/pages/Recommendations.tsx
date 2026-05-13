@@ -1,23 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import {
-  Lightbulb,
-  FileBarChart2,
-  DatabaseZap,
-  CheckCircle2,
-  ListChecks,
-  MousePointerClick,
-  Wrench,
-  Zap,
-  TrendingUp,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
 import type { Recommendation } from '@/lib/analyzer';
 import {
   formatRub,
@@ -28,308 +11,177 @@ import {
   WORK_HOURS_PER_MONTH,
 } from '@/lib/pm-insights';
 
-const TYPE_CONFIG: Record<
-  Recommendation['type'],
-  { icon: React.ElementType; color: string; bg: string; border: string; accent: string }
-> = {
-  report: {
-    icon: FileBarChart2,
-    color: 'text-blue-700',
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
-    accent: 'bg-blue-600',
-  },
-  data: {
-    icon: DatabaseZap,
-    color: 'text-violet-700',
-    bg: 'bg-violet-50',
-    border: 'border-violet-200',
-    accent: 'bg-violet-600',
-  },
-  approval: {
-    icon: CheckCircle2,
-    color: 'text-rose-700',
-    bg: 'bg-rose-50',
-    border: 'border-rose-200',
-    accent: 'bg-rose-600',
-  },
-  backlog: {
-    icon: ListChecks,
-    color: 'text-amber-700',
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    accent: 'bg-amber-500',
-  },
-  manual: {
-    icon: MousePointerClick,
-    color: 'text-emerald-700',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
-    accent: 'bg-emerald-600',
-  },
+const TYPE_CONFIG: Record<Recommendation['type'], { color: string; tint: string; label: string }> = {
+  report:   { color: '#229ED9', tint: '#e3f2fa', label: 'отчёт' },
+  data:     { color: '#7c3aed', tint: '#ede9fe', label: 'данные' },
+  approval: { color: '#dc2626', tint: '#fee2e2', label: 'согласование' },
+  backlog:  { color: '#f59e0b', tint: '#fef3c7', label: 'бэклог' },
+  manual:   { color: '#16a34a', tint: '#dcfce7', label: 'ручное' },
 };
 
-const PRIORITY_CONFIG = {
-  Высокий: { badge: 'bg-rose-100 text-rose-700 border-rose-200', dot: 'bg-rose-500' },
-  Средний:  { badge: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
-  Низкий:   { badge: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400' },
-} as const;
+function TypeIcon({ type }: { type: Recommendation['type'] }) {
+  const paths: Record<Recommendation['type'], React.ReactNode> = {
+    report:   <><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v4h4M9 16v-3M12 16v-6M15 16v-4"/></>,
+    data:     <><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6"/></>,
+    approval: <><path d="M4 12l5 5L20 6"/></>,
+    backlog:  <><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></>,
+    manual:   <><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></>,
+  };
+  const t = TYPE_CONFIG[type];
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      {paths[type]}
+    </svg>
+  );
+}
 
-const EFFORT_CONFIG = {
-  'Низкие':   'bg-emerald-100 text-emerald-700',
-  'Средние':  'bg-amber-100 text-amber-700',
-  'Высокие':  'bg-rose-100 text-rose-700',
-} as const;
-
-function RecommendationCard({ rec, index }: { rec: Recommendation; index: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const type = TYPE_CONFIG[rec.type];
-  const prio = PRIORITY_CONFIG[rec.priority];
-  const Icon = type.icon;
+function RecCard({ rec, index }: { rec: Recommendation; index: number }) {
+  const [open, setOpen] = useState(false);
+  const t = TYPE_CONFIG[rec.type];
+  const evidence = RECOMMENDATION_EVIDENCE_BY_ID[rec.id];
 
   return (
-    <Card className={`border shadow-sm hover:shadow-md transition-shadow overflow-hidden ${type.border}`}>
-      {/* Coloured left accent bar */}
-      <div className="flex">
-        <div className={`w-1 flex-shrink-0 ${type.accent}`} />
-        <div className="flex-1">
-          <CardHeader className={`pb-3 pt-4 px-5 ${type.bg}`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                {/* Number + icon */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${type.bg} ${type.color} border ${type.border}`}>
-                  <Icon size={20} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
-                    <CardTitle className={`text-base font-bold ${type.color}`}>{rec.title}</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge className={`border text-xs font-semibold ${prio.badge}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${prio.dot}`} />
-                      {rec.priority} приоритет
-                    </Badge>
-                    <Badge className={`text-xs ${EFFORT_CONFIG[rec.effortLevel]}`}>
-                      Усилия: {rec.effortLevel}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setExpanded((v) => !v)}
-                className={`p-1.5 rounded-lg hover:bg-white/60 transition-colors flex-shrink-0 ${type.color}`}
-                aria-label="Показать подробности"
-              >
-                {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              </button>
-            </div>
-          </CardHeader>
-
-          <CardContent className="px-5 pt-4 pb-4 space-y-4">
-            {/* Explanation */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Объяснение
-              </p>
-              <p className="text-sm text-foreground leading-relaxed">{rec.explanation}</p>
-            </div>
-
-            {/* Effect */}
-            <div className={`rounded-xl p-4 ${type.bg} border ${type.border}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className={`w-4 h-4 ${type.color}`} />
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Ожидаемый эффект
-                </p>
-              </div>
-              <p className="text-sm text-foreground leading-relaxed">{rec.effect}</p>
-            </div>
-
-            {/* Expandable details */}
-            {expanded && (
-              <div className="space-y-4 pt-1 border-t border-border/30">
-                {/* Related activities */}
-                {rec.relatedActivities.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                      Связанные активности
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {rec.relatedActivities.map((act) => (
-                        <span
-                          key={act}
-                          className={`text-xs px-2.5 py-1 rounded-md border font-medium ${type.bg} ${type.color} ${type.border}`}
-                        >
-                          {act}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Metrics + Tool */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Zap className="w-3.5 h-3.5 text-muted-foreground" />
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Показатель</p>
-                    </div>
-                    <p className="text-sm font-bold text-foreground">{rec.metric}</p>
-                  </div>
-                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Wrench className="w-3.5 h-3.5 text-muted-foreground" />
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Инструмент</p>
-                    </div>
-                    <p className="text-sm font-bold text-foreground">{rec.tool}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-xl bg-blue-50 border border-blue-100 p-3">
-                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Источник данных</p>
-                    <p className="mt-1 text-sm font-medium text-blue-950">
-                      {RECOMMENDATION_EVIDENCE_BY_ID[rec.id]?.source ?? 'Источник будет уточнён после классификации процесса'}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-violet-50 border border-violet-100 p-3">
-                    <p className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Нормативное обоснование</p>
-                    <p className="mt-1 text-sm font-medium text-violet-950">
-                      {RECOMMENDATION_EVIDENCE_BY_ID[rec.id]?.pmbok ?? 'PMBoK 6 · процесс будет уточнён после классификации'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
+    <div className="card">
+      <div style={{ display: 'flex', gap: 16, padding: 20 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, background: t.tint, color: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <TypeIcon type={rec.type} />
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--ink-muted)', fontWeight: 600 }}>{String(index + 1).padStart(2, '0')}</span>
+            <span className="pill" style={{ background: t.tint, color: t.color }}>{t.label}</span>
+            <span className={'pill ' + (rec.priority === 'Высокий' ? 'pill-accent' : rec.priority === 'Средний' ? 'pill-warn' : '')}>{rec.priority}</span>
+            <span className="pill">усилия · {rec.effortLevel}</span>
+            <span className="pill pill-ghost">{rec.metric}</span>
+          </div>
+          <h3 style={{ fontSize: 18 }}>{rec.title}</h3>
+          <p style={{ marginTop: 8, fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6 }}>{rec.explanation}</p>
+
+          <div style={{ marginTop: 14, padding: '12px 16px', background: t.tint, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8M14 7h7v7"/></svg>
+            <div>
+              <div style={{ fontSize: 11, color: t.color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Эффект</div>
+              <div style={{ fontSize: 14, color: 'var(--ink)', marginTop: 2, fontWeight: 500 }}>{rec.effect}</div>
+            </div>
+          </div>
+
+          {open && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line-soft)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div>
+                <div className="label-overline" style={{ marginBottom: 6 }}>Связанные активности</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {rec.relatedActivities.map(a => <span key={a} className="pill">{a}</span>)}
+                </div>
+                <div className="label-overline" style={{ marginTop: 14, marginBottom: 6 }}>Инструмент</div>
+                <div style={{ fontSize: 13.5, fontWeight: 500 }}>{rec.tool}</div>
+              </div>
+              <div>
+                <div className="label-overline" style={{ marginBottom: 6 }}>Источник данных</div>
+                <div style={{ fontSize: 13.5 }}>{evidence?.source ?? 'Источник будет уточнён после классификации процесса'}</div>
+                <div className="label-overline" style={{ marginTop: 14, marginBottom: 6 }}>PMBoK 6</div>
+                <div style={{ fontSize: 13.5, fontWeight: 500 }}>{evidence?.pmbok ?? 'PMBoK 6 · процесс будет уточнён после классификации'}</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => setOpen(s => !s)} style={{ flexShrink: 0, alignSelf: 'flex-start' }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            {open ? <path d="M6 15l6-6 6 6"/> : <path d="M6 9l6 6 6-6"/>}
+          </svg>
+        </button>
       </div>
-    </Card>
+    </div>
   );
 }
 
 export default function Recommendations() {
   const { events, analyzer } = useData();
-  const [teamSize, setTeamSize] = useState(3);
+  const [team, setTeam] = useState(3);
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center border border-amber-200">
-          <Lightbulb className="w-8 h-8 text-amber-500" />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', textAlign: 'center', gap: 16 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--warn-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18h6M10 22h4M12 2a6 6 0 016 6c0 3-2 4-3 6H9c-1-2-3-3-3-6a6 6 0 016-6z"/></svg>
         </div>
-        <h2 className="text-2xl font-bold">Нет данных для анализа</h2>
-        <p className="text-muted-foreground max-w-sm">
-          Загрузите CSV или воспользуйтесь демо-данными, чтобы получить персонализированные рекомендации.
-        </p>
-        <Link href="/upload"><Button>Загрузить данные</Button></Link>
+        <h2>Нет данных для анализа</h2>
+        <div style={{ color: 'var(--ink-muted)', maxWidth: 360 }}>Загрузите CSV или воспользуйтесь демо-данными, чтобы получить персонализированные рекомендации.</div>
+        <Link href="/upload"><a className="btn btn-primary">Загрузить данные</a></Link>
       </div>
     );
   }
 
   const recs = analyzer.generateRecommendations();
-  const highCount = recs.filter((r) => r.priority === 'Высокий').length;
-  const midCount  = recs.filter((r) => r.priority === 'Средний').length;
-  const lowCount  = recs.filter((r) => r.priority === 'Низкий').length;
-  const totalSaving = recs.reduce((sum, r) => {
-    const match = r.timeSaving.match(/(\d+)/);
-    return sum + (match ? parseInt(match[1]) : 0);
-  }, 0);
+  const counts = {
+    high: recs.filter(r => r.priority === 'Высокий').length,
+    mid:  recs.filter(r => r.priority === 'Средний').length,
+    low:  recs.filter(r => r.priority === 'Низкий').length,
+  };
+
   const totalMinutes = events.reduce((sum, event) => sum + Number(event.duration || 0), 0);
   const minuteRate = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
-  const weeklySavingHours = Math.round((totalMinutes * MCKINSEY_AI_TIME_REDUCTION / (WEEKS_PER_MONTH * 60) * teamSize) * 10) / 10;
-  const monthlySavingRub = totalMinutes * MCKINSEY_AI_TIME_REDUCTION * minuteRate * teamSize;
-  const yearlySavingRub = monthlySavingRub * 12;
+  const monthly = totalMinutes * MCKINSEY_AI_TIME_REDUCTION * minuteRate * team;
+  const yearly  = monthly * 12;
+  const weeklyH = (totalMinutes * MCKINSEY_AI_TIME_REDUCTION / (WEEKS_PER_MONTH * 60) * team).toFixed(1);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
-          <Lightbulb size={26} className="text-amber-500" />
+    <div>
+      {/* Page title */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, padding: '16px 0 28px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1>Рекомендации</h1>
+          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
+            Сгенерированы автоматически из event log. По каждому процессу — приоритет, ожидаемый эффект, инструмент и нормативное обоснование.
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Рекомендации</h1>
-          <p className="text-muted-foreground mt-1">
-            Сформированы автоматически на основе event log и показателя автоматизируемости Ai
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="pill pill-accent">высокий · {counts.high}</span>
+          <span className="pill pill-warn">средний · {counts.mid}</span>
+          <span className="pill">низкий · {counts.low}</span>
         </div>
       </div>
 
-      {/* Summary strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {highCount > 0 && (
-          <Card className="border-rose-200 bg-rose-50/60 shadow-sm">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-rose-700">{highCount}</p>
-              <p className="text-xs text-rose-600 font-medium mt-0.5">Высокий приоритет</p>
-            </CardContent>
-          </Card>
-        )}
-        <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-amber-700">{midCount}</p>
-            <p className="text-xs text-amber-600 font-medium mt-0.5">Средний приоритет</p>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-slate-50/60 shadow-sm">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-slate-600">{lowCount}</p>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Низкий приоритет</p>
-          </CardContent>
-        </Card>
-        <Card className="border-emerald-200 bg-emerald-50/60 shadow-sm">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-emerald-700">{totalSaving}+</p>
-            <p className="text-xs text-emerald-600 font-medium mt-0.5">Ч/нед потенциальной экономии</p>
-          </CardContent>
-        </Card>
+      {/* Calculator */}
+      <div className="card card-pad" style={{ background: 'linear-gradient(135deg, var(--accent-soft) 0%, #ffffff 60%)' }}>
+        <div className="eyebrow">Калькулятор эффекта</div>
+        <h3 style={{ marginTop: 4 }}>Влияние на команду PM</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 32, marginTop: 24, alignItems: 'center' }}>
+          <div>
+            <div className="label-overline">Размер команды PM</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
+              <span className="num-xl" style={{ color: 'var(--accent)' }}>{team}</span>
+              <span className="muted">PM</span>
+            </div>
+            <input type="range" min={1} max={20} value={team} onChange={e => setTeam(+e.target.value)} style={{ width: '100%', marginTop: 12, accentColor: 'var(--accent)' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-muted)', marginTop: 4 }}>
+              <span>1</span><span>10</span><span>20</span>
+            </div>
+          </div>
+          <div>
+            <div className="label-overline">В месяц</div>
+            <div className="num-md" style={{ marginTop: 8, color: 'var(--accent)' }}>~{new Intl.NumberFormat('ru-RU').format(Math.round(monthly / 1000))}k ₽</div>
+          </div>
+          <div>
+            <div className="label-overline">В год</div>
+            <div className="num-md" style={{ marginTop: 8 }}>~{new Intl.NumberFormat('ru-RU').format(Math.round(yearly / 1_000_000))} млн ₽</div>
+          </div>
+          <div>
+            <div className="label-overline">Часов в неделю</div>
+            <div className="num-md" style={{ marginTop: 8 }}>~{weeklyH} ч</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line-soft)', fontSize: 12.5, color: 'var(--ink-muted)' }}>
+          McKinsey 2024 (−40% времени на контент-задачи) · средняя ЗП PM hh.ru — 200 000 ₽/мес · 168 ч/мес
+        </div>
       </div>
 
-      <Card className="border-emerald-200 bg-emerald-50/60 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">Калькулятор экономии</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm font-medium text-foreground">Размер команды PM</p>
-              <Badge className="bg-emerald-600">{teamSize} PM</Badge>
-            </div>
-            <Slider
-              min={1}
-              max={20}
-              step={1}
-              value={[teamSize]}
-              onValueChange={(value) => setTeamSize(value[0] ?? 3)}
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-emerald-700">Экономия в месяц</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-950">~{formatRub(monthlySavingRub)}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-emerald-700">Экономия в год</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-950">~{formatRub(yearlySavingRub)}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-emerald-700">Часов в неделю</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-950">~{weeklySavingHours} ч</p>
-            </div>
-          </div>
-          <p className="text-xs text-emerald-800">
-            Расчёт на основе McKinsey (2024) и средней зарплаты PM hh.ru (2024)
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Recommendation cards */}
-      <div className="space-y-4">
-        {recs.map((rec, i) => (
-          <RecommendationCard key={rec.id} rec={rec} index={i} />
-        ))}
+      {/* Recommendations list */}
+      <div className="sec-title">
+        <h2>Рекомендации</h2>
+        <span className="sec-sub">{recs.length} элементов · по убыванию Ai</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {recs.map((r, i) => <RecCard key={r.id} rec={r} index={i} />)}
       </div>
     </div>
   );
