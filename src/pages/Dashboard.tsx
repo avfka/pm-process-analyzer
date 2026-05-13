@@ -93,12 +93,6 @@ export default function Dashboard() {
             Структура операционной нагрузки PM-команды, рейтинг автоматизации и потенциальный экономический эффект.
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Link href="/upload"><a className="btn btn-primary">
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
-            Импорт CSV
-          </a></Link>
-        </div>
       </div>
 
       {/* KPI strip */}
@@ -110,9 +104,7 @@ export default function Dashboard() {
       </div>
 
       {/* Workload chart */}
-      <SectionTitle title="Распределение трудозатрат" sub={`${slices.length} категорий · ${m.totalHours} часов`}
-        right={<><span className="pill">часы</span><span className="pill pill-ghost">доля %</span></>}
-      />
+      <SectionTitle title="Распределение трудозатрат" sub={`${slices.length} категорий · ${m.totalHours} часов`} />
       <div className="card" style={{ paddingBottom: 0 }}>
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
           <div>
