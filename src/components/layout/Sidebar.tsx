@@ -1,13 +1,26 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, UploadCloud, FileSearch, Star, Lightbulb, ActivitySquare } from 'lucide-react';
+import {
+  ActivitySquare,
+  Calculator,
+  FileSearch,
+  FileText,
+  LayoutDashboard,
+  Lightbulb,
+  Route,
+  Star,
+  UploadCloud,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { name: 'Дашборд', href: '/', icon: LayoutDashboard },
-  { name: 'Загрузка данных', href: '/upload', icon: UploadCloud },
-  { name: 'Анализ процессов', href: '/analysis', icon: FileSearch },
-  { name: 'Рейтинг автоматизации', href: '/rating', icon: Star },
+  { name: 'Операционная нагрузка', href: '/', icon: LayoutDashboard },
+  { name: 'Данные', href: '/upload', icon: UploadCloud },
+  { name: 'AS-IS анализ', href: '/analysis', icon: FileSearch },
+  { name: 'Ai рейтинг', href: '/rating', icon: Star },
+  { name: 'Экономический эффект', href: '/impact', icon: Calculator },
+  { name: 'Генератор материалов', href: '/materials', icon: FileText },
+  { name: 'TO-BE модель', href: '/to-be', icon: Route },
   { name: 'Рекомендации', href: '/recommendations', icon: Lightbulb },
 ];
 
@@ -20,12 +33,12 @@ export function Sidebar() {
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
           <ActivitySquare size={18} strokeWidth={2.5} />
         </div>
-        <span className="font-display font-semibold text-lg tracking-tight">PM Miner</span>
+        <span className="font-display font-semibold text-lg tracking-tight">PM Ops Optimizer</span>
       </div>
       
       <div className="flex flex-1 flex-col overflow-y-auto px-3 py-6">
         <div className="text-xs font-medium text-sidebar-foreground/50 mb-4 px-3 uppercase tracking-wider">
-          Аналитика
+          PM automation
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {navItems.map((item) => {
@@ -61,7 +74,7 @@ export function Sidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium">Продакт-менеджер</span>
-            <span className="text-xs text-sidebar-foreground/60">Локальная версия</span>
+            <span className="text-xs text-sidebar-foreground/60">Vercel версия</span>
           </div>
         </div>
       </div>

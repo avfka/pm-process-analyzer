@@ -66,8 +66,8 @@ export default function ProcessAnalysis() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Анализ процессов</h1>
-        <p className="text-muted-foreground mt-2">Переходы, варианты, узкие места и типовые сценарии</p>
+        <h1 className="text-3xl font-display font-bold text-foreground">AS-IS анализ процессов</h1>
+        <p className="text-muted-foreground mt-2">Как процессы выглядят сейчас: переходы, варианты, возвраты и узкие места</p>
       </div>
 
       {/* Summary metrics */}
