@@ -10,8 +10,6 @@ import DataUpload from "@/pages/DataUpload";
 import ProcessAnalysis from "@/pages/ProcessAnalysis";
 import AutomationRating from "@/pages/AutomationRating";
 import Recommendations from "@/pages/Recommendations";
-import ImpactCalculator from "@/pages/ImpactCalculator";
-import MaterialGenerator from "@/pages/MaterialGenerator";
 import ToBeModel from "@/pages/ToBeModel";
 import Research from "@/pages/Research";
 
@@ -34,8 +32,6 @@ function Router() {
         <Route path="/upload" component={DataUpload} />
         <Route path="/analysis" component={ProcessAnalysis} />
         <Route path="/rating" component={AutomationRating} />
-        <Route path="/impact" component={ImpactCalculator} />
-        <Route path="/materials" component={MaterialGenerator} />
         <Route path="/to-be" component={ToBeModel} />
         <Route path="/recommendations" component={Recommendations} />
         <Route path="/research" component={Research} />

@@ -3,9 +3,7 @@ import { Link, useLocation } from 'wouter';
 import {
   ActivitySquare,
   BookOpen,
-  Calculator,
   FileSearch,
-  FileText,
   LayoutDashboard,
   Lightbulb,
   Route,
@@ -19,10 +17,8 @@ const navItems = [
   { name: 'Данные', href: '/upload', icon: UploadCloud },
   { name: 'AS-IS анализ', href: '/analysis', icon: FileSearch },
   { name: 'Ai рейтинг', href: '/rating', icon: Star },
-  { name: 'Экономический эффект', href: '/impact', icon: Calculator },
-  { name: 'Генератор материалов', href: '/materials', icon: FileText },
-  { name: 'TO-BE модель', href: '/to-be', icon: Route },
   { name: 'Рекомендации', href: '/recommendations', icon: Lightbulb },
+  { name: 'TO-BE модель', href: '/to-be', icon: Route },
   { name: 'О исследовании', href: '/research', icon: BookOpen },
 ];
 

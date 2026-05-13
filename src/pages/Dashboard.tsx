@@ -258,7 +258,7 @@ export default function Dashboard() {
             ))}
             <div className="flex gap-3 pt-2">
               <Link href="/rating"><Button variant="outline">Открыть Ai рейтинг</Button></Link>
-              <Link href="/impact"><Button>Посчитать эффект</Button></Link>
+              <Link href="/recommendations"><Button>Посчитать эффект</Button></Link>
             </div>
           </CardContent>
         </Card>
