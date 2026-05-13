@@ -33,11 +33,16 @@ function NavIcon({ id, active }: { id: string; active: boolean }) {
   );
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location] = useLocation();
 
   return (
-    <aside className="sidebar">
+    <aside className={'sidebar' + (isOpen ? ' open' : '')}>
       {/* brand */}
       <div style={{ padding: '20px 20px 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{
@@ -51,10 +56,21 @@ export function Sidebar() {
             <path d="M13 2L4 14h6l-1 8 9-12h-6z"/>
           </svg>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, flex: 1 }}>
           <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>PM Analyzer</span>
           <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>operations</span>
         </div>
+        {/* Close button — mobile only, hidden on desktop via CSS */}
+        <button
+          onClick={onClose}
+          className="hamburger-btn btn btn-ghost"
+          style={{ width: 32, height: 32, padding: 0, justifyContent: 'center', flexShrink: 0 }}
+          aria-label="Закрыть меню"
+        >
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 5l14 14M19 5L5 19"/>
+          </svg>
+        </button>
       </div>
 
       {/* search */}
@@ -77,7 +93,10 @@ export function Sidebar() {
             const active = location === item.href;
             return (
               <Link key={item.id} href={item.href}>
-                <a className={'nav-item ' + (active ? 'active' : '')}>
+                <a
+                  className={'nav-item ' + (active ? 'active' : '')}
+                  onClick={onClose}
+                >
                   <span className="nav-no">{item.no}</span>
                   <NavIcon id={item.id} active={active} />
                   <span style={{ flex: 1 }}>{item.label}</span>
@@ -95,7 +114,7 @@ export function Sidebar() {
             width: 36, height: 36, borderRadius: '50%',
             background: 'linear-gradient(135deg, #229ED9 0%, #7c3aed 100%)',
             color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700,
+            fontSize: 13, fontWeight: 700, flexShrink: 0,
           }}>AV</div>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25, flex: 1, minWidth: 0 }}>
             <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>А. Фокин</span>
