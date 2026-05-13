@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 
 const NAV = [
@@ -40,6 +40,10 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location] = useLocation();
+  const [search, setSearch] = useState('');
+  const filteredNav = search.trim()
+    ? NAV.filter(item => item.label.toLowerCase().includes(search.toLowerCase()))
+    : NAV;
 
   return (
     <aside className={'sidebar' + (isOpen ? ' open' : '')}>
@@ -79,7 +83,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>
           </svg>
-          <input placeholder="Поиск" />
+          <input placeholder="Поиск" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
@@ -89,7 +93,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           Pipeline
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {NAV.map(item => {
+          {filteredNav.map(item => {
             const active = location === item.href;
             return (
               <Link key={item.id} href={item.href}>

@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,9 +24,10 @@ function NotFound() {
   );
 }
 
-function Router() {
+function AnimatedSwitch() {
+  const [location] = useLocation();
   return (
-    <MainLayout>
+    <div key={location} className="page-anim">
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/upload" component={DataUpload} />
@@ -37,6 +38,14 @@ function Router() {
         <Route path="/research" component={Research} />
         <Route component={NotFound} />
       </Switch>
+    </div>
+  );
+}
+
+function Router() {
+  return (
+    <MainLayout>
+      <AnimatedSwitch />
     </MainLayout>
   );
 }
