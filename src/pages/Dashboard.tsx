@@ -44,12 +44,12 @@ const RESEARCH_PAIN_CARDS = [
 function EmptyState() {
   return (
     <div className="space-y-6">
-      <div className="border border-border/50 bg-white p-8">
+      <div className="border border-border/50 bg-white p-5 sm:p-8">
         <div className="max-w-3xl">
           <Badge variant="outline" className="mb-4 bg-blue-50 text-blue-700 border-blue-200">
             PM Operations Intelligence
           </Badge>
-          <h1 className="text-3xl font-display font-bold text-foreground">
+          <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">
             Найдите, куда уходит время продакт-менеджера
           </h1>
           <p className="mt-3 text-muted-foreground leading-relaxed">
@@ -104,14 +104,14 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Операционная нагрузка PM</h1>
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">Операционная нагрузка PM</h1>
           <p className="mt-2 text-muted-foreground">
             Структура времени, work about work и процессы, которые первыми нужно автоматизировать.
           </p>
         </div>
-        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+        <Badge variant="outline" className="shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200">
           {events.length} событий загружено
         </Badge>
       </div>
@@ -163,9 +163,27 @@ export default function Dashboard() {
             <CardTitle>Распределение трудозатрат</CardTitle>
             <CardDescription>Категории задач PM по суммарной длительности</CardDescription>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent>
+            <div className="space-y-3 sm:hidden">
+              {slices.filter((slice) => slice.minutes > 0).map((slice, index) => (
+                <div key={slice.category} className="rounded-lg border border-border/50 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                      <p className="break-words text-sm font-semibold text-foreground">{slice.category}</p>
+                    </div>
+                    <span className="shrink-0 text-sm font-bold text-foreground">{slice.hours} ч</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full" style={{ width: `${slice.share}%`, backgroundColor: COLORS[index % COLORS.length] }} />
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{slice.share}% от операционной нагрузки</p>
+                </div>
+              ))}
+            </div>
+            <div className="hidden h-80 sm:block">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={slices} layout="vertical" margin={{ left: 10, right: 20 }}>
+              <BarChart data={slices} layout="vertical" margin={{ left: 0, right: 16 }}>
                 <XAxis type="number" tick={{ fontSize: 11 }} unit=" ч" />
                 <YAxis dataKey="category" type="category" width={155} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(value: number) => [`${value} ч`, "Трудозатраты"]} />
@@ -176,6 +194,7 @@ export default function Dashboard() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
@@ -241,22 +260,22 @@ export default function Dashboard() {
           <CardContent className="space-y-4">
             {topScores.map((score, index) => (
               <div key={score.activity} className="rounded-lg border border-border/50 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">#{index + 1}</Badge>
-                      <p className="font-semibold text-foreground">{score.activity}</p>
+                      <p className="min-w-0 break-words font-semibold text-foreground">{score.activity}</p>
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">{score.recommendation}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="text-2xl font-bold text-primary">{score.score}</p>
                     <p className="text-xs text-muted-foreground">Ai</p>
                   </div>
                 </div>
               </div>
             ))}
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
               <Link href="/rating"><Button variant="outline">Открыть Ai рейтинг</Button></Link>
               <Link href="/recommendations"><Button>Посчитать эффект</Button></Link>
             </div>
@@ -285,7 +304,7 @@ function MetricCard({
           <Icon className="h-5 w-5" />
         </div>
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
+        <p className="mt-1 break-words text-xl font-bold text-foreground sm:text-2xl">{value}</p>
         <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
       </CardContent>
     </Card>

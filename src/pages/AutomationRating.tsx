@@ -29,7 +29,7 @@ const PRIORITY_CONFIG = {
 function AiScale({ score, priority }: { score: number; priority: 'Высокий' | 'Средний' | 'Низкий' }) {
   const cfg = PRIORITY_CONFIG[priority];
   return (
-    <div className="flex items-center gap-2 min-w-[140px]">
+    <div className="flex min-w-[120px] items-center gap-2 sm:min-w-[140px]">
       <span className="text-base font-bold text-foreground w-8 text-right">{score}</span>
       <div className="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
         <div
@@ -85,7 +85,7 @@ export default function AutomationRating() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Рейтинг автоматизации</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">Рейтинг автоматизации</h1>
         <p className="text-muted-foreground mt-2">
           Показатель Ai рассчитывается по формуле: 0.35 · Частота + 0.25 · Длительность + 0.20 · Вариативность + 0.20 · Структура
         </p>
@@ -123,7 +123,8 @@ export default function AutomationRating() {
           <CardTitle>Топ‑10: структура показателя Ai</CardTitle>
           <CardDescription>Вклад каждого фактора в итоговый балл (взвешенные значения)</CardDescription>
         </CardHeader>
-        <CardContent className="h-96">
+        <CardContent className="h-80 overflow-x-auto sm:h-96">
+          <div className="h-full min-w-[680px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -148,6 +149,7 @@ export default function AutomationRating() {
               <Bar dataKey="Структура (×0.20)" stackId="a" fill={FACTOR_COLORS.structScore} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -158,7 +160,7 @@ export default function AutomationRating() {
             <CardTitle>Детальный рейтинг автоматизации</CardTitle>
             <CardDescription>Нажмите на строку, чтобы увидеть TO-BE модель и экономику</CardDescription>
           </CardHeader>
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 text-muted-foreground text-xs border-b border-border/40">
                 <tr>
@@ -217,6 +219,39 @@ export default function AutomationRating() {
               </tbody>
             </table>
           </div>
+          <div className="divide-y divide-border/30 md:hidden">
+            {scores.map((score, i) => {
+              const cfg = PRIORITY_CONFIG[score.priority];
+              const isSelected = selectedScore?.activity === score.activity;
+              return (
+                <button
+                  key={score.activity}
+                  type="button"
+                  onClick={() => setSelectedActivity(score.activity)}
+                  className={`w-full p-4 text-left transition-colors ${isSelected ? 'bg-primary/5' : 'hover:bg-slate-50/60'}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 flex-shrink-0 rounded-full ${cfg.dot}`} />
+                        <p className="break-words text-sm font-semibold text-foreground">#{i + 1} {score.activity}</p>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                        <span>Частота: <b className="text-foreground">{score.frequency}</b></span>
+                        <span>Длительность: <b className="text-foreground">{score.avgDuration} мин</b></span>
+                      </div>
+                    </div>
+                    <Badge className={`${cfg.badge} shrink-0 border text-xs font-semibold`}>
+                      {score.priority}
+                    </Badge>
+                  </div>
+                  <div className="mt-3">
+                    <AiScale score={score.score} priority={score.priority} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </Card>
 
         {selectedScore && selectedDetail && (
@@ -239,7 +274,7 @@ export default function AutomationRating() {
                   <TrendingUp className="w-4 h-4 text-emerald-700" />
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Экономия</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                   <div>
                     <p className="text-emerald-700">AS-IS</p>
                     <p className="font-bold text-emerald-950">{selectedDetail.asIsWeekly} мин/нед</p>

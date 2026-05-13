@@ -40,7 +40,7 @@ export default function ProcessAnalysis() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">AS-IS анализ процессов</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">AS-IS анализ процессов</h1>
         <p className="text-muted-foreground mt-2">Как процессы выглядят сейчас: переходы, варианты, возвраты и узкие места</p>
       </div>
 
@@ -70,7 +70,7 @@ export default function ProcessAnalysis() {
             Таблица переходов между активностями
           </CardTitle>
         </CardHeader>
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-border/30 text-muted-foreground uppercase text-xs">
               <tr>
@@ -107,6 +107,29 @@ export default function ProcessAnalysis() {
             </tbody>
           </table>
         </div>
+        <div className="divide-y divide-border/30 md:hidden">
+          {transitions.map((t, i) => {
+            const maxCount = transitions[0]?.count || 1;
+            const intensity = Math.round((t.count / maxCount) * 100);
+            return (
+              <div key={i} className="p-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">{t.from}</p>
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <ArrowRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                    <span className="break-words">{t.to}</span>
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${intensity}%` }} />
+                    </div>
+                    <span className="min-w-8 text-right text-sm font-bold text-foreground">{t.count}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </Card>
 
       {/* Bottlenecks */}
@@ -118,8 +141,9 @@ export default function ProcessAnalysis() {
               Узкие места — по длительности
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 pb-2">
-            <ResponsiveContainer width="100%" height={220}>
+          <CardContent className="overflow-x-auto pt-4 pb-2">
+            <div className="h-[220px] min-w-[520px]">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={bottleneckChartData} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                 <XAxis type="number" tick={{ fontSize: 11 }} unit=" мин" />
@@ -136,17 +160,18 @@ export default function ProcessAnalysis() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
             <div className="mt-2 divide-y divide-border/30">
               {bottlenecks.map((item, i) => (
-                <div key={item.activity} className="py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div key={item.activity} className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: BOTTLENECK_COLORS[i % BOTTLENECK_COLORS.length] }}
                     />
-                    <span className="text-sm font-medium text-foreground">{item.activity}</span>
+                    <span className="break-words text-sm font-medium text-foreground">{item.activity}</span>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="flex-shrink-0 pl-6 text-left sm:text-right sm:pl-0">
                     <span className="font-bold text-foreground">{Math.round(item.avgDuration)} мин</span>
                     <span className="text-xs text-muted-foreground ml-2">({item.count} раз)</span>
                   </div>
@@ -170,12 +195,12 @@ export default function ProcessAnalysis() {
             ) : (
               <div className="divide-y divide-border/50">
                 {cycles.slice(0, 6).map((cycle, i) => (
-                  <div key={i} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center">
-                    <div>
+                  <div key={i} className="flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <Badge variant="outline" className="mb-1.5 bg-slate-100 text-xs">{cycle.case_id}</Badge>
                       <p className="font-medium text-foreground text-sm">{cycle.activity}</p>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200">
+                    <Badge className="w-fit bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200">
                       ×{cycle.count} повтора
                     </Badge>
                   </div>

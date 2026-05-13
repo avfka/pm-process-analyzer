@@ -27,7 +27,7 @@ export default function Research() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Документация</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">Документация</h1>
         <p className="mt-2 text-muted-foreground">
           Источники, методология Aᵢ и нормативное обоснование через PMBoK 6.
         </p>
@@ -75,7 +75,7 @@ export default function Research() {
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-            <p className="text-center font-mono text-lg font-bold text-foreground">
+            <p className="break-words text-center font-mono text-base font-bold text-foreground sm:text-lg">
               Aᵢ = 0.35F + 0.25D + 0.20V + 0.20S
             </p>
           </div>

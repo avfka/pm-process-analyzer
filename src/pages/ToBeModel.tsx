@@ -34,7 +34,7 @@ export default function ToBeModel() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">TO-BE модель процессов</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">TO-BE модель процессов</h1>
         <p className="mt-2 text-muted-foreground">
           Целевое состояние: что должно измениться после автоматизации и какой артефакт должен появиться.
         </p>
@@ -43,17 +43,17 @@ export default function ToBeModel() {
       <div className="space-y-5">
         {models.map((model, index) => (
           <Card key={`${model.process}-${index}`} className="border-border/50 shadow-sm">
-            <CardHeader className="border-b border-border/40 bg-slate-50/70">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
+            <CardHeader className="border-b border-border/40 bg-slate-50/70 p-4 sm:p-6">
+              <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+                <div className="min-w-0">
                   <Badge variant="outline" className="mb-2">Процесс #{index + 1}</Badge>
-                  <CardTitle>{model.process}</CardTitle>
+                  <CardTitle className="break-words">{model.process}</CardTitle>
                   <CardDescription className="mt-1">{model.pmbok}</CardDescription>
                 </div>
-                <Badge className="bg-emerald-600">TO-BE</Badge>
+                <Badge className="shrink-0 bg-emerald-600">TO-BE</Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5 p-5">
+            <CardContent className="space-y-5 p-4 sm:p-5">
               <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr]">
                 <StateBlock title="AS-IS проблема" text={model.currentIssue} tone="red" />
                 <div className="hidden items-center justify-center lg:flex">

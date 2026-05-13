@@ -95,15 +95,15 @@ function RecommendationCard({ rec, index }: { rec: Recommendation; index: number
         <div className="flex-1">
           <CardHeader className={`pb-3 pt-4 px-5 ${type.bg}`}>
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
+              <div className="flex min-w-0 items-start gap-3">
                 {/* Number + icon */}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${type.bg} ${type.color} border ${type.border}`}>
                   <Icon size={20} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
-                    <CardTitle className={`text-base font-bold ${type.color}`}>{rec.title}</CardTitle>
+                    <CardTitle className={`break-words text-base font-bold ${type.color}`}>{rec.title}</CardTitle>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge className={`border text-xs font-semibold ${prio.badge}`}>
@@ -169,7 +169,7 @@ function RecommendationCard({ rec, index }: { rec: Recommendation; index: number
                 )}
 
                 {/* Metrics + Tool */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <Zap className="w-3.5 h-3.5 text-muted-foreground" />
@@ -246,7 +246,7 @@ export default function Recommendations() {
           <Lightbulb size={26} className="text-amber-500" />
         </div>
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Рекомендации</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">Рекомендации</h1>
           <p className="text-muted-foreground mt-1">
             Сформированы автоматически на основе event log и показателя автоматизируемости Ai
           </p>
@@ -254,7 +254,7 @@ export default function Recommendations() {
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 lg:grid-cols-4">
         {highCount > 0 && (
           <Card className="border-rose-200 bg-rose-50/60 shadow-sm">
             <CardContent className="p-4 text-center">
@@ -289,7 +289,7 @@ export default function Recommendations() {
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <p className="text-sm font-medium text-foreground">Размер команды PM</p>
               <Badge className="bg-emerald-600">{teamSize} PM</Badge>
             </div>
@@ -304,11 +304,11 @@ export default function Recommendations() {
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <p className="text-xs uppercase tracking-wide text-emerald-700">Экономия в месяц</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-950">~{formatRub(monthlySavingRub)}</p>
+              <p className="mt-1 break-words text-xl font-bold text-emerald-950 sm:text-2xl">~{formatRub(monthlySavingRub)}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-emerald-700">Экономия в год</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-950">~{formatRub(yearlySavingRub)}</p>
+              <p className="mt-1 break-words text-xl font-bold text-emerald-950 sm:text-2xl">~{formatRub(yearlySavingRub)}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-emerald-700">Часов в неделю</p>

@@ -13,13 +13,13 @@ import {
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { name: 'Операционная нагрузка', href: '/', icon: LayoutDashboard },
-  { name: 'Данные', href: '/upload', icon: UploadCloud },
-  { name: 'AS-IS анализ', href: '/analysis', icon: FileSearch },
-  { name: 'Ai рейтинг', href: '/rating', icon: Star },
-  { name: 'Рекомендации', href: '/recommendations', icon: Lightbulb },
-  { name: 'TO-BE модель', href: '/to-be', icon: Route },
-  { name: 'Документация', href: '/research', icon: BookOpen },
+  { name: 'Операционная нагрузка', shortName: 'Нагрузка', href: '/', icon: LayoutDashboard },
+  { name: 'Данные', shortName: 'Данные', href: '/upload', icon: UploadCloud },
+  { name: 'AS-IS анализ', shortName: 'AS-IS', href: '/analysis', icon: FileSearch },
+  { name: 'Ai рейтинг', shortName: 'Ai', href: '/rating', icon: Star },
+  { name: 'Рекомендации', shortName: 'Советы', href: '/recommendations', icon: Lightbulb },
+  { name: 'TO-BE модель', shortName: 'TO-BE', href: '/to-be', icon: Route },
+  { name: 'Документация', shortName: 'Документы', href: '/research', icon: BookOpen },
 ];
 
 export function Sidebar() {
@@ -87,14 +87,14 @@ export function Sidebar() {
             <Link key={item.name} href={item.href} className="outline-none">
               <div
                 className={cn(
-                  "flex min-h-12 min-w-[72px] flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium leading-tight transition-colors",
+                  "flex min-h-12 min-w-[68px] flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium leading-tight transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 <item.icon className="h-4 w-4 flex-shrink-0" />
-                <span className="max-w-full truncate">{item.name}</span>
+                <span className="max-w-full truncate">{item.shortName}</span>
               </div>
             </Link>
           );

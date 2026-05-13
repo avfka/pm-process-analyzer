@@ -50,11 +50,11 @@ export default function DataUpload() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Загрузка данных</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground sm:text-3xl">Загрузка данных</h1>
         <p className="text-muted-foreground mt-2">Загрузите Event Log в формате CSV для анализа процессов</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
         <Card className="border-border/50 shadow-md">
           <CardHeader>
             <CardTitle>Импорт CSV файла</CardTitle>
@@ -63,7 +63,7 @@ export default function DataUpload() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
+            <div className="border-2 border-dashed border-border rounded-xl p-5 sm:p-8 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
               <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-sm text-foreground font-medium mb-1">Перетащите файл сюда или нажмите для выбора</p>
               <p className="text-xs text-muted-foreground mb-6">Только CSV файлы (макс. 5MB)</p>
@@ -94,18 +94,18 @@ export default function DataUpload() {
               Нет своих данных? Используйте наш подготовленный датасет.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col justify-center h-48">
+          <CardContent className="flex flex-col justify-center sm:h-48">
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Демо-данные содержат смоделированный процесс работы продакт-менеджера: сбор требований, работу в Jira, встречи и согласования.
               </p>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 <Button onClick={loadDemoData} className="w-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
                   <Database className="w-4 h-4 mr-2" />
                   Загрузить демо-данные
                 </Button>
                 {events.length > 0 && (
-                  <Button variant="destructive" onClick={clearData} size="icon">
+                  <Button variant="destructive" onClick={clearData} size="icon" className="w-full sm:w-9">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 )}
