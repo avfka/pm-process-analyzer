@@ -27,7 +27,7 @@ export default function Research() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">О исследовании</h1>
+        <h1 className="text-3xl font-display font-bold text-foreground">Документация</h1>
         <p className="mt-2 text-muted-foreground">
           Источники, методология Aᵢ и нормативное обоснование через PMBoK 6.
         </p>

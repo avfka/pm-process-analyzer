@@ -19,7 +19,7 @@ const navItems = [
   { name: 'Ai рейтинг', href: '/rating', icon: Star },
   { name: 'Рекомендации', href: '/recommendations', icon: Lightbulb },
   { name: 'TO-BE модель', href: '/to-be', icon: Route },
-  { name: 'О исследовании', href: '/research', icon: BookOpen },
+  { name: 'Документация', href: '/research', icon: BookOpen },
 ];
 
 export function Sidebar() {
