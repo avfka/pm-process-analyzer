@@ -1,0 +1,13 @@
+packages:
+  "papaparse": "For client-side parsing of uploaded CSV files"
+  "@types/papaparse": "TypeScript definitions for PapaParse"
+  "recharts": "For rendering data visualizations (bar, pie, area charts)"
+  "framer-motion": "For premium page transitions and micro-interactions"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes in JS"
+  "lucide-react": "For beautiful UI icons"
+
+notes:
+  - "App is fully client-side. No backend API integration is required for data processing."
+  - "All data state is managed in-browser using React Context."
+  - "UI is fully translated to Russian as requested."

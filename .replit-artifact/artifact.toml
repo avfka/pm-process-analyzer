@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "PM Process Analyzer"
+version = "1.0.0"
+id = "artifacts/pm-process-analyzer"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 19955
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/pm-process-analyzer run dev"
+
+[services.env]
+PORT = "19955"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/pm-process-analyzer", "run", "build"]
+publicDir = "artifacts/pm-process-analyzer/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
