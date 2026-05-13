@@ -12,7 +12,6 @@ import {
   ListChecks,
   MousePointerClick,
   Wrench,
-  Clock,
   Zap,
   TrendingUp,
   ChevronDown,
@@ -104,10 +103,6 @@ function RecommendationCard({ rec, index }: { rec: Recommendation; index: number
                     </Badge>
                     <Badge className={`text-xs ${EFFORT_CONFIG[rec.effortLevel]}`}>
                       Усилия: {rec.effortLevel}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs bg-white/70">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Экономия: {rec.timeSaving}
                     </Badge>
                   </div>
                 </div>
@@ -234,12 +229,14 @@ export default function Recommendations() {
 
       {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-rose-200 bg-rose-50/60 shadow-sm">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-rose-700">{highCount}</p>
-            <p className="text-xs text-rose-600 font-medium mt-0.5">Высокий приоритет</p>
-          </CardContent>
-        </Card>
+        {highCount > 0 && (
+          <Card className="border-rose-200 bg-rose-50/60 shadow-sm">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-rose-700">{highCount}</p>
+              <p className="text-xs text-rose-600 font-medium mt-0.5">Высокий приоритет</p>
+            </CardContent>
+          </Card>
+        )}
         <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-amber-700">{midCount}</p>
@@ -266,18 +263,6 @@ export default function Recommendations() {
           <RecommendationCard key={rec.id} rec={rec} index={i} />
         ))}
       </div>
-
-      {/* Footer note */}
-      <Card className="border-border/40 bg-slate-50/60 shadow-sm">
-        <CardContent className="p-4 text-sm text-muted-foreground flex items-start gap-3">
-          <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-          <span>
-            Рекомендации рассчитаны на основе частоты, длительности, вариативности и
-            структурированности активностей из загруженного event log. Нажмите на карточку,
-            чтобы развернуть детали и связанные активности.
-          </span>
-        </CardContent>
-      </Card>
     </div>
   );
 }

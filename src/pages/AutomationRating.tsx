@@ -1,11 +1,10 @@
-import React from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Zap, TrendingUp, Info } from 'lucide-react';
+import { Zap, TrendingUp } from 'lucide-react';
 
 const PRIORITY_CONFIG = {
   Высокий: {
@@ -66,7 +65,6 @@ export default function AutomationRating() {
   const scores = analyzer.getAutomationScores();
   const highCount = scores.filter((s) => s.priority === 'Высокий').length;
   const midCount = scores.filter((s) => s.priority === 'Средний').length;
-  const lowCount = scores.filter((s) => s.priority === 'Низкий').length;
 
   const chartData = scores.slice(0, 10).map((s) => ({
     name: s.activity.length > 18 ? s.activity.slice(0, 16) + '…' : s.activity,
@@ -88,43 +86,8 @@ export default function AutomationRating() {
         </p>
       </div>
 
-      {/* Formula card */}
-      <Card className="border-primary/20 bg-primary/3 shadow-sm">
-        <CardContent className="pt-4 pb-4">
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5 font-mono font-bold text-foreground text-base">
-              Ai =
-            </div>
-            {[
-              { label: '0.35', name: 'Частота', color: FACTOR_COLORS.freqScore },
-              { label: '0.25', name: 'Длительность', color: FACTOR_COLORS.durScore },
-              { label: '0.20', name: 'Вариативность', color: FACTOR_COLORS.varScore },
-              { label: '0.20', name: 'Структура', color: FACTOR_COLORS.structScore },
-            ].map((f, i) => (
-              <React.Fragment key={f.name}>
-                {i > 0 && <span className="text-muted-foreground font-bold">+</span>}
-                <div className="flex items-center gap-1">
-                  <span className="font-mono font-semibold" style={{ color: f.color }}>{f.label}</span>
-                  <span className="text-muted-foreground">·</span>
-                  <span
-                    className="px-2 py-0.5 rounded-md text-white text-xs font-semibold"
-                    style={{ backgroundColor: f.color }}
-                  >
-                    {f.name}
-                  </span>
-                </div>
-              </React.Fragment>
-            ))}
-            <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-              <Info className="w-3.5 h-3.5" />
-              Все факторы нормированы от 0 до 100
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-emerald-200 bg-emerald-50/50 shadow-sm">
           <CardContent className="p-5 flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -144,17 +107,6 @@ export default function AutomationRating() {
             <div>
               <p className="text-xs text-amber-700 font-medium">Средний приоритет (50–74)</p>
               <p className="text-2xl font-bold text-amber-800">{midCount}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-slate-50/50 shadow-sm">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-              <Zap className="w-5 h-5 text-slate-400" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-600 font-medium">Низкий приоритет (&lt; 50)</p>
-              <p className="text-2xl font-bold text-slate-700">{lowCount}</p>
             </div>
           </CardContent>
         </Card>
@@ -214,14 +166,6 @@ export default function AutomationRating() {
                   <span className="text-violet-600">●</span> Ср. длит.
                   <br /><span className="font-normal text-muted-foreground/70 text-[10px]">мин · вес 0.25</span>
                 </th>
-                <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">
-                  <span className="text-emerald-600">●</span> Вариативность
-                  <br /><span className="font-normal text-muted-foreground/70 text-[10px]">балл · вес 0.20</span>
-                </th>
-                <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">
-                  <span className="text-amber-500">●</span> Структура
-                  <br /><span className="font-normal text-muted-foreground/70 text-[10px]">балл · вес 0.20</span>
-                </th>
                 <th className="px-4 py-3 font-semibold text-left whitespace-nowrap min-w-[180px]">
                   Ai
                 </th>
@@ -248,12 +192,6 @@ export default function AutomationRating() {
                       <div className="text-foreground font-medium">{score.avgDuration} мин</div>
                       <div className="text-[11px] text-violet-500 font-semibold">({score.durScore})</div>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="text-foreground font-medium">{score.varScore}</div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="text-foreground font-medium">{score.structScore}</div>
-                    </td>
                     <td className="px-4 py-3">
                       <AiScale score={score.score} priority={score.priority} />
                     </td>
@@ -267,12 +205,6 @@ export default function AutomationRating() {
               })}
             </tbody>
           </table>
-        </div>
-        <div className="px-4 py-3 bg-slate-50 border-t border-border/30 flex flex-wrap gap-6 text-xs text-muted-foreground">
-          <span><strong>Ai ≥ 75</strong> — высокий приоритет автоматизации</span>
-          <span><strong>50–74</strong> — средний приоритет</span>
-          <span><strong>&lt; 50</strong> — низкий приоритет</span>
-          <span className="ml-auto">В скобках — нормированный балл от 0 до 100</span>
         </div>
       </Card>
     </div>
