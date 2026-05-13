@@ -33,10 +33,6 @@ export default function ToBeModel() {
             Целевое состояние процессов. Для каждого приоритетного процесса описано, что меняется после автоматизации, какие входы/выходы и какой эффект.
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="pill">процессов · {models.length}</span>
-          <span className="pill pill-pos">p95 · −38%</span>
-        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -51,7 +47,6 @@ export default function ToBeModel() {
                 <h3>{m.process}</h3>
                 <div style={{ marginTop: 4, fontSize: 13, color: 'var(--ink-muted)' }}>{m.pmbok}</div>
               </div>
-              <span className="pill pill-pos">TO-BE</span>
             </div>
 
             {/* AS-IS → TO-BE */}

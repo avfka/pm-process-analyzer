@@ -27,7 +27,18 @@ const PREVIEW_ROWS = [
 export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
   const [error, setError] = useState<string | null>(null);
+  const [isDemoLoaded, setIsDemoLoaded] = useState(false);
   const stats = analyzer.basicStats;
+
+  const handleDemoLoad = () => {
+    loadDemoData();
+    setIsDemoLoaded(true);
+  };
+
+  const handleClearData = () => {
+    clearData();
+    setIsDemoLoaded(false);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,6 +64,7 @@ export default function DataUpload() {
           duration: Number(row.duration) || 0,
         }));
         setEvents(parsedEvents);
+        setIsDemoLoaded(false);
         setError(null);
       },
       error: (err) => setError(`Ошибка парсинга CSV: ${err.message}`),
@@ -76,7 +88,6 @@ export default function DataUpload() {
                 Схема ок
               </span>
             : null}
-          <span className="pill">v 0.4.2</span>
         </div>
       </div>
 
@@ -101,7 +112,7 @@ export default function DataUpload() {
                 <span className="btn">Выбрать файл</span>
                 <input type="file" accept=".csv" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
               </label>
-              <button className="btn btn-primary" onClick={loadDemoData}>
+              <button className="btn btn-primary" onClick={handleDemoLoad}>
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
                 Демо
               </button>
@@ -134,7 +145,7 @@ export default function DataUpload() {
             <Row k="Синхронизация" v={events.length > 0 ? 'только что' : '—'} />
           </div>
           <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {events.length > 0 && <button className="btn btn-sm" onClick={clearData}>Сбросить</button>}
+            {events.length > 0 && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
             <Link href="/analysis"><a className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>К AS-IS →</a></Link>
           </div>
         </div>
@@ -172,29 +183,33 @@ export default function DataUpload() {
         </table>
       </div>
 
-      {/* Preview */}
-      <div className="sec-title">
-        <h2>Превью</h2>
-        <span className="sec-sub">первые 8 строк датасета</span>
-      </div>
-      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
-            <thead><tr>
-              <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th><th style={{ textAlign: 'right' }}>duration</th>
-            </tr></thead>
-            <tbody>
-              {PREVIEW_ROWS.map((r, i) => (
-                <tr key={i}>
-                  {r.map((c, j) => (
-                    <td key={j} style={{ textAlign: j === 5 ? 'right' : 'left', color: j === 0 ? 'var(--accent)' : j === 5 ? 'var(--ink)' : 'var(--ink-3)' }}>{String(c)}</td>
+      {isDemoLoaded && (
+        <>
+          {/* Preview */}
+          <div className="sec-title">
+            <h2>Превью</h2>
+            <span className="sec-sub">первые 8 строк демо-датасета</span>
+          </div>
+          <div className="card table-wrap" style={{ paddingBottom: 0 }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
+                <thead><tr>
+                  <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th><th style={{ textAlign: 'right' }}>duration</th>
+                </tr></thead>
+                <tbody>
+                  {PREVIEW_ROWS.map((r, i) => (
+                    <tr key={i}>
+                      {r.map((c, j) => (
+                        <td key={j} style={{ textAlign: j === 5 ? 'right' : 'left', color: j === 0 ? 'var(--accent)' : j === 5 ? 'var(--ink)' : 'var(--ink-3)' }}>{String(c)}</td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

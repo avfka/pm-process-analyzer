@@ -4,13 +4,6 @@ import { Link } from 'wouter';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatRub, getAutomationDetail } from '@/lib/pm-insights';
 
-const FORMULA_PARTS = [
-  ['F', 'Частота',       '0.35', 'чем чаще процесс, тем выше эффект автоматизации'],
-  ['D', 'Длительность',  '0.25', 'чем дольше ручное выполнение, тем выше ROI'],
-  ['V', 'Вариативность', '0.20', 'ниже вариативность — проще автоматизировать'],
-  ['S', 'Структура',     '0.20', 'системные данные автоматизируются лучше встреч'],
-];
-
 const RcTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload || !payload.length) return null;
   return (
@@ -74,34 +67,6 @@ export default function AutomationRating() {
           <span className="pill pill-accent">высокий · {highCount}</span>
           <span className="pill pill-warn">средний · {midCount}</span>
           <span className="pill">низкий · {lowCount}</span>
-        </div>
-      </div>
-
-      {/* Formula card */}
-      <div className="card card-pad">
-        <div className="eyebrow">Формула</div>
-        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8, padding: '20px 24px', background: 'var(--accent-soft)', borderRadius: 14, fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>
-          <span style={{ color: 'var(--accent)' }}>Aᵢ</span>
-          <span style={{ color: 'var(--ink-muted)' }}>=</span>
-          <span><span style={{ color: 'var(--accent)' }}>0.35</span> · F</span>
-          <span style={{ color: 'var(--ink-faint)' }}>+</span>
-          <span><span style={{ color: 'var(--accent)' }}>0.25</span> · D</span>
-          <span style={{ color: 'var(--ink-faint)' }}>+</span>
-          <span><span style={{ color: 'var(--accent)' }}>0.20</span> · V</span>
-          <span style={{ color: 'var(--ink-faint)' }}>+</span>
-          <span><span style={{ color: 'var(--accent)' }}>0.20</span> · S</span>
-        </div>
-        <div className="grid-4" style={{ marginTop: 16 }}>
-          {FORMULA_PARTS.map(([l, n, w, d]) => (
-            <div key={l} style={{ padding: '12px 4px' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>{l}</span>
-                <span style={{ fontSize: 12, color: 'var(--ink-muted)', fontWeight: 600 }}>вес {w}</span>
-              </div>
-              <div style={{ marginTop: 4, fontSize: 14, fontWeight: 600 }}>{n}</div>
-              <div style={{ marginTop: 4, fontSize: 12.5, color: 'var(--ink-muted)', lineHeight: 1.5 }}>{d}</div>
-            </div>
-          ))}
         </div>
       </div>
 

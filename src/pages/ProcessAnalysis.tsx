@@ -70,10 +70,6 @@ export default function ProcessAnalysis() {
             Переходы между активностями, узкие места по длительности и обнаруженные циклы возвратов — точки, где интервенция даёт максимальный эффект.
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="pill">{transitions.length} переходов</span>
-          <span className="pill pill-neg">{cycles.length} циклов</span>
-        </div>
       </div>
 
       {/* KPI strip */}

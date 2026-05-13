@@ -94,7 +94,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span className="pill">Q1 · 2026</span>
           <Link href="/upload"><a className="btn btn-primary">
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
             Импорт CSV
@@ -110,21 +109,6 @@ export default function Dashboard() {
         <KPI label="Work about work"    value="58%"                                                        sub="среднего рабочего дня · Asana 2023" />
       </div>
 
-      {/* Research pains */}
-      <SectionTitle title="Боли из исследований" sub="на каких данных стоит работа" />
-      <div className="grid-4">
-        {RESEARCH_PAINS.map((p, i) => (
-          <div key={i} className="card card-pad" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 180 }}>
-            <div className="num-lg" style={{ color: i === 2 ? 'var(--accent)' : 'var(--ink)' }}>{p.value}</div>
-            <div style={{ marginTop: 16, fontSize: 14.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{p.title}</div>
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, color: 'var(--ink-muted)' }}>
-              <span>{p.src}</span>
-              <span>{p.sample}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Workload chart */}
       <SectionTitle title="Распределение трудозатрат" sub={`${slices.length} категорий · ${m.totalHours} часов`}
         right={<><span className="pill">часы</span><span className="pill pill-ghost">доля %</span></>}
@@ -135,7 +119,6 @@ export default function Dashboard() {
             <h3>По категориям задач PM</h3>
             <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>квартал к кварталу — изменение справа</div>
           </div>
-          <span className="pill pill-accent">Q1 2026</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr' }}>
           <div style={{ padding: 24 }}>

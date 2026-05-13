@@ -64,6 +64,10 @@ export default function Research() {
         </table>
       </div>
 
+      <div className="card card-pad" style={{ marginTop: 16, background: 'var(--accent-soft)', color: 'var(--accent-2)', fontSize: 13.5, lineHeight: 1.55, fontWeight: 600 }}>
+        McKinsey 2024 (−40% времени на контент-задачи) · средняя ЗП PM hh.ru — 200 000 ₽/мес · 168 ч/мес
+      </div>
+
       {/* Methodology */}
       <div className="sec-title">
         <h2>Методология Ai</h2>

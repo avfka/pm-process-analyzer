@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'wouter';
 
 const NAV = [
-  { id: 'dashboard',  no: '01', label: 'Главная',        href: '/' },
-  { id: 'data',       no: '02', label: 'Данные',         href: '/upload' },
-  { id: 'analysis',   no: '03', label: 'AS-IS анализ',   href: '/analysis' },
-  { id: 'rating',     no: '04', label: 'Ai рейтинг',     href: '/rating' },
-  { id: 'recs',       no: '05', label: 'Рекомендации',   href: '/recommendations' },
-  { id: 'tobe',       no: '06', label: 'TO-BE модель',   href: '/to-be' },
-  { id: 'research',   no: '07', label: 'Документация',   href: '/research' },
+  { id: 'dashboard', label: 'Главная',        href: '/' },
+  { id: 'data',      label: 'Данные',         href: '/upload' },
+  { id: 'analysis',  label: 'AS-IS анализ',   href: '/analysis' },
+  { id: 'rating',    label: 'Ai рейтинг',     href: '/rating' },
+  { id: 'recs',      label: 'Рекомендации',   href: '/recommendations' },
+  { id: 'tobe',      label: 'TO-BE модель',   href: '/to-be' },
+  { id: 'research',  label: 'Документация',   href: '/research' },
 ];
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -40,10 +40,6 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location] = useLocation();
-  const [search, setSearch] = useState('');
-  const filteredNav = search.trim()
-    ? NAV.filter(item => item.label.toLowerCase().includes(search.toLowerCase()))
-    : NAV;
 
   return (
     <aside className={'sidebar' + (isOpen ? ' open' : '')}>
@@ -77,23 +73,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </button>
       </div>
 
-      {/* search */}
-      <div style={{ padding: '12px 16px 8px' }}>
-        <div className="search-bar" style={{ background: 'var(--bg)', boxShadow: 'none', height: 36 }}>
-          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>
-          </svg>
-          <input placeholder="Поиск" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-      </div>
-
       {/* nav */}
       <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
-        <div style={{ fontSize: 11, color: 'var(--ink-faint)', fontWeight: 600, padding: '8px 12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Pipeline
-        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {filteredNav.map(item => {
+          {NAV.map(item => {
             const active = location === item.href;
             return (
               <Link key={item.id} href={item.href}>
@@ -101,7 +84,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   className={'nav-item ' + (active ? 'active' : '')}
                   onClick={onClose}
                 >
-                  <span className="nav-no">{item.no}</span>
                   <NavIcon id={item.id} active={active} />
                   <span style={{ flex: 1 }}>{item.label}</span>
                 </a>

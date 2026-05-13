@@ -112,12 +112,6 @@ export default function Recommendations() {
   }
 
   const recs = analyzer.generateRecommendations();
-  const counts = {
-    high: recs.filter(r => r.priority === 'Высокий').length,
-    mid:  recs.filter(r => r.priority === 'Средний').length,
-    low:  recs.filter(r => r.priority === 'Низкий').length,
-  };
-
   const totalMinutes = events.reduce((sum, event) => sum + Number(event.duration || 0), 0);
   const minuteRate = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
   const monthly = totalMinutes * MCKINSEY_AI_TIME_REDUCTION * minuteRate * team;
@@ -133,11 +127,6 @@ export default function Recommendations() {
           <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
             Сгенерированы автоматически из event log. По каждому процессу — приоритет, ожидаемый эффект, инструмент и нормативное обоснование.
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="pill pill-accent">высокий · {counts.high}</span>
-          <span className="pill pill-warn">средний · {counts.mid}</span>
-          <span className="pill">низкий · {counts.low}</span>
         </div>
       </div>
 
@@ -169,9 +158,6 @@ export default function Recommendations() {
             <div className="label-overline">Часов в неделю</div>
             <div className="num-md" style={{ marginTop: 8 }}>~{weeklyH} ч</div>
           </div>
-        </div>
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line-soft)', fontSize: 12.5, color: 'var(--ink-muted)' }}>
-          McKinsey 2024 (−40% времени на контент-задачи) · средняя ЗП PM hh.ru — 200 000 ₽/мес · 168 ч/мес
         </div>
       </div>
 
