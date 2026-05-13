@@ -81,12 +81,7 @@ export default function ProcessAnalysis() {
       </div>
 
       {/* Transitions table */}
-      <SectionTitle title="Граф переходов" sub="топ-10 по частоте"
-        right={<button className="btn btn-sm">
-          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18l-7 9v6l-4-2v-4z"/></svg>
-          Фильтр
-        </button>}
-      />
+      <SectionTitle title="Граф переходов" sub="топ-10 по частоте" />
       <div className="card" style={{ paddingBottom: 0 }}>
         <table className="t">
           <thead><tr>

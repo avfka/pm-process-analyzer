@@ -68,6 +68,16 @@ export default function Research() {
         McKinsey 2024 (−40% времени на контент-задачи) · средняя ЗП PM hh.ru — 200 000 ₽/мес · 168 ч/мес
       </div>
 
+      <div className="card card-pad" style={{ marginTop: 16 }}>
+        <div className="eyebrow">Расшифровка графика Bottlenecks</div>
+        <h3 style={{ marginTop: 6 }}>Bottlenecks · средняя длительность</h3>
+        <div style={{ marginTop: 12, display: 'grid', gap: 10, fontSize: 13.5, lineHeight: 1.55 }}>
+          <div><strong style={{ color: 'var(--accent)' }}>AVG</strong> — средняя длительность выполнения активности по всем кейсам.</div>
+          <div><strong style={{ color: 'var(--ink-muted)' }}>SLA</strong> — целевой норматив времени: сколько процесс должен занимать в оптимальном состоянии.</div>
+          <div><strong style={{ color: 'var(--neg)' }}>P95</strong> — 95-й перцентиль: длительность, ниже которой укладываются 95% наблюдений; показывает хвост долгих кейсов.</div>
+        </div>
+      </div>
+
       {/* Methodology */}
       <div className="sec-title">
         <h2>Методология Ai</h2>

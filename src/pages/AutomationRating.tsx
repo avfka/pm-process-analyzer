@@ -39,9 +39,6 @@ export default function AutomationRating() {
   const scores = analyzer.getAutomationScores();
   const selected = scores[selectedIdx] ?? scores[0];
   const selectedDetail = selected ? getAutomationDetail(selected, events) : null;
-  const highCount = scores.filter(s => s.priority === 'Высокий').length;
-  const midCount  = scores.filter(s => s.priority === 'Средний').length;
-  const lowCount  = scores.filter(s => s.priority === 'Низкий').length;
 
   const chartData = scores.slice(0, 10).map(s => ({
     name: s.activity.length > 14 ? s.activity.slice(0, 12) + '…' : s.activity,
@@ -62,11 +59,6 @@ export default function AutomationRating() {
           <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 720, fontSize: 15, lineHeight: 1.55 }}>
             Композитный показатель автоматизируемости. Чем выше Ai — тем приоритетнее автоматизация.
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="pill pill-accent">высокий · {highCount}</span>
-          <span className="pill pill-warn">средний · {midCount}</span>
-          <span className="pill">низкий · {lowCount}</span>
         </div>
       </div>
 

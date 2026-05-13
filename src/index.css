@@ -585,7 +585,22 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 
 /* Desktop: always show sidebar in grid, never as overlay */
 @media (min-width: 769px) {
-  .sidebar { transform: none !important; position: sticky; }
+  .app {
+    display: block;
+  }
+  .sidebar {
+    transform: none !important;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+  }
+  .main-col {
+    margin-left: var(--sidebar-w);
+  }
+  .topbar {
+    display: none;
+  }
   .sidebar-overlay { display: none !important; }
   .hamburger-btn { display: none !important; }
 }

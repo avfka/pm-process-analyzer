@@ -146,7 +146,7 @@ export default function DataUpload() {
           </div>
           <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {events.length > 0 && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
-            <Link href="/analysis"><a className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>К AS-IS →</a></Link>
+            {isDemoLoaded && <Link href="/analysis"><a className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>К AS-IS →</a></Link>}
           </div>
         </div>
       </div>
@@ -173,9 +173,13 @@ export default function DataUpload() {
                 <td>{d}</td>
                 <td className="muted" style={{ fontFamily: 'var(--f-mono)', fontSize: 12.5 }}>{ex}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <span className="pill pill-pos">
-                    <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                  </span>
+                  {events.length > 0 ? (
+                    <span className="pill pill-pos">
+                      <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                    </span>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
                 </td>
               </tr>
             ))}
