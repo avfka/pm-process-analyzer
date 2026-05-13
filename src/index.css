@@ -161,6 +161,7 @@ html, body {
   font-feature-settings: 'cv11', 'ss01', 'ss03';
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.005em;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -214,6 +215,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   padding: 8px 32px 96px;
   max-width: 1440px;
   width: 100%;
+  min-width: 0;
 }
 
 /* ── Cards ──────────────────────────────────────────────── */
@@ -222,6 +224,8 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   background: var(--surface);
   border-radius: var(--r-lg);
   box-shadow: var(--sh-1);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card-pad   { padding: 24px; }
@@ -542,7 +546,28 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   .card-pad-l { padding: 20px; }
 
   /* Tables: enable horizontal scroll */
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .card > .t {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .card > .t thead,
+  .card > .t tbody {
+    display: table;
+    min-width: 620px;
+    width: 100%;
+  }
+  .table-wrap > .t,
+  .table-wrap > div > .t {
+    min-width: 620px;
+  }
 
   /* KPI numbers scale down */
   .num-xl { font-size: 32px; }
@@ -551,6 +576,30 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 
   /* Formula display: smaller */
   .formula-display { font-size: 18px !important; }
+  .methodology-formula {
+    padding: 18px 14px !important;
+    font-size: 20px !important;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .inline-formula {
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    line-height: 1.8;
+  }
+
+  .to-be-flow {
+    grid-template-columns: 1fr !important;
+  }
+  .to-be-arrow {
+    display: none !important;
+  }
+  .to-be-details {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    padding: 16px !important;
+  }
 
   /* Topbar live pill: hide on very small screens */
   .topbar-live { display: none; }

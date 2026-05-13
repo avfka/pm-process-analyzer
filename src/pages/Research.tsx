@@ -45,7 +45,7 @@ export default function Research() {
         <h2>Источники</h2>
         <span className="sec-sub">исследования и бенчмарки</span>
       </div>
-      <div className="card" style={{ paddingBottom: 0 }}>
+      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
         <table className="t">
           <thead><tr>
             <th>Источник</th>
@@ -70,7 +70,7 @@ export default function Research() {
         <span className="sec-sub">взвешенный композитный индекс</span>
       </div>
       <div className="card card-pad">
-        <div style={{ padding: '28px 24px', background: 'var(--accent-soft)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 12, fontSize: 30, fontWeight: 700, letterSpacing: '-0.025em' }}>
+        <div className="methodology-formula" style={{ padding: '28px 24px', background: 'var(--accent-soft)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 12, fontSize: 30, fontWeight: 700, letterSpacing: '-0.025em' }}>
           <span style={{ color: 'var(--accent)' }}>Aᵢ</span>
           <span style={{ color: 'var(--ink-muted)' }}>=</span>
           <span><span style={{ color: 'var(--accent)' }}>0.35</span> · F</span>
@@ -99,7 +99,7 @@ export default function Research() {
           <div className="eyebrow">Пример расчёта</div>
           <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.6 }}>
             Если F = 80, D = 60, V = 70, S = 90, то{' '}
-            <span style={{ background: 'var(--surface)', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>
+            <span className="inline-formula" style={{ background: 'var(--surface)', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>
               Aᵢ = 0.35×80 + 0.25×60 + 0.20×70 + 0.20×90 = 75
             </span>.
             Такой процесс попадает в высокий приоритет автоматизации (Aᵢ ≥ 75).
@@ -112,7 +112,7 @@ export default function Research() {
         <h2>Маппинг на PMBoK 6</h2>
         <span className="sec-sub">связь с нормативной базой</span>
       </div>
-      <div className="card" style={{ paddingBottom: 0 }}>
+      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
         <table className="t">
           <thead><tr>
             <th>Процесс PM</th>

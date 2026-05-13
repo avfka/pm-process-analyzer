@@ -55,12 +55,12 @@ export default function ToBeModel() {
             </div>
 
             {/* AS-IS → TO-BE */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0 }}>
+            <div className="to-be-flow" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0 }}>
               <div style={{ padding: 24, background: '#fef2f2' }}>
                 <div className="eyebrow" style={{ color: 'var(--neg)' }}>AS-IS · ПРОБЛЕМА</div>
                 <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.6, color: 'var(--ink)' }}>{m.currentIssue}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px', background: 'linear-gradient(90deg, #fef2f2 0%, #f0fdf4 100%)' }}>
+              <div className="to-be-arrow" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px', background: 'linear-gradient(90deg, #fef2f2 0%, #f0fdf4 100%)' }}>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--sh-2)' }}>
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M13 6l6 6-6 6"/>
@@ -74,7 +74,7 @@ export default function ToBeModel() {
             </div>
 
             {/* Details grid */}
-            <div style={{ padding: 24, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+            <div className="to-be-details" style={{ padding: 24, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
               <div>
                 <div className="label-overline" style={{ marginBottom: 10 }}>Входы</div>
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>

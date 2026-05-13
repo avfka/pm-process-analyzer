@@ -133,7 +133,7 @@ export default function DataUpload() {
             <Row k="Участники" v={events.length > 0 ? stats.totalActors : '—'} />
             <Row k="Синхронизация" v={events.length > 0 ? 'только что' : '—'} />
           </div>
-          <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
+          <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {events.length > 0 && <button className="btn btn-sm" onClick={clearData}>Сбросить</button>}
             <Link href="/analysis"><a className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>К AS-IS →</a></Link>
           </div>
@@ -145,7 +145,7 @@ export default function DataUpload() {
         <h2>Схема event log</h2>
         <span className="sec-sub">6 обязательных полей</span>
       </div>
-      <div className="card" style={{ paddingBottom: 0 }}>
+      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
         <table className="t">
           <thead><tr>
             <th>Поле</th>
@@ -177,7 +177,7 @@ export default function DataUpload() {
         <h2>Превью</h2>
         <span className="sec-sub">первые 8 строк датасета</span>
       </div>
-      <div className="card" style={{ paddingBottom: 0 }}>
+      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
         <div style={{ overflowX: 'auto' }}>
           <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
             <thead><tr>
