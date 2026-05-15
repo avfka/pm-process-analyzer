@@ -143,6 +143,7 @@ interface PendingFile {
   rawRows: any[];
   mapping: Record<string, string>;
   systemFallback: string;
+  platformId: string;
 }
 
 interface ImportBatch {
@@ -169,8 +170,9 @@ export default function DataUpload() {
   const systemsCount = new Set(events.map(e => e.system)).size;
 
   /* ── Parse one file ─────────────────────────────────────── */
-  const parseFile = (file: File, currentPlatformSystem: string) => {
+  const parseFile = (file: File, filePlatformId: string) => {
     setError(null);
+    const filePlatform = PLATFORMS.find(p => p.id === filePlatformId) ?? PLATFORMS[0];
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -182,7 +184,8 @@ export default function DataUpload() {
           headers,
           rawRows: results.data as any[],
           mapping: autoDetect(headers),
-          systemFallback: currentPlatformSystem,
+          systemFallback: filePlatform.system,
+          platformId: filePlatformId,
         };
         setPending(pf);
         setStage('mapping');
@@ -198,7 +201,7 @@ export default function DataUpload() {
     e.target.value = '';
     const [first, ...rest] = files;
     setFileQueue(rest);
-    parseFile(first, platform.system);
+    parseFile(first, platformId);
   };
 
   /* ── Mapping ────────────────────────────────────────────── */
@@ -238,7 +241,7 @@ export default function DataUpload() {
     if (fileQueue.length > 0) {
       const [next, ...rest] = fileQueue;
       setFileQueue(rest);
-      parseFile(next, platform.system);
+      parseFile(next, 'universal');
     } else {
       setPending(null);
       setStage('loaded');
@@ -247,7 +250,7 @@ export default function DataUpload() {
 
   const handleEditMapping = () => {
     if (!lastPending) return;
-    setPending({ ...lastPending, mapping: autoDetect(lastPending.headers), systemFallback: lastPending.systemFallback });
+    setPending({ ...lastPending, mapping: autoDetect(lastPending.headers) });
     setStage('mapping');
   };
 
@@ -314,12 +317,23 @@ export default function DataUpload() {
         )}
       </div>
 
-      {/* Platform selector — always visible */}
-      <PlatformSelector selected={platformId} onChange={id => {
-        setPlatformId(id);
-        const p = PLATFORMS.find(x => x.id === id);
-        if (p) handleSystemFallback(p.system);
-      }} />
+      {/* Platform selector — global in idle/loaded, per-file in mapping */}
+      <PlatformSelector
+        selected={stage === 'mapping' && pending ? pending.platformId : platformId}
+        onChange={id => {
+          if (stage === 'mapping') {
+            const p = PLATFORMS.find(x => x.id === id);
+            setPending(pf => pf ? {
+              ...pf,
+              platformId: id,
+              systemFallback: p?.system ?? '',
+              mapping: autoDetect(pf.headers),
+            } : pf);
+          } else {
+            setPlatformId(id);
+          }
+        }}
+      />
 
       {/* ── IDLE ── */}
       {stage === 'idle' && (
@@ -399,9 +413,12 @@ export default function DataUpload() {
                     {isSet && !detected && <span className="pill" style={{ fontSize: 11.5, background: 'var(--warn-tint)', color: 'var(--warn)' }}>вручную</span>}
                     {!isSet && isMissing && <span className="pill pill-neg" style={{ fontSize: 11.5 }}>обязательное</span>}
                     {!isSet && !isMissing && <span className="pill" style={{ fontSize: 11.5 }}>не выбрано</span>}
-                    {field === 'system' && !selected && platform.system && pending.systemFallback === platform.system && (
-                      <span className="pill" style={{ fontSize: 11, background: platform.bg, color: platform.color }}>← из платформы</span>
-                    )}
+                    {field === 'system' && !selected && (() => {
+                      const fp = PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0];
+                      return fp.system && pending.systemFallback === fp.system
+                        ? <span className="pill" style={{ fontSize: 11, background: fp.bg, color: fp.color }}>← из платформы</span>
+                        : null;
+                    })()}
                   </div>
 
                   <div>
@@ -412,7 +429,7 @@ export default function DataUpload() {
                           <option value="">— из колонки CSV —</option>
                           {pending.headers.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
-                        <input placeholder={platform.system || 'Jira, Slack…'} value={pending.systemFallback}
+                        <input placeholder={(PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0]).system || 'Jira, Slack…'} value={pending.systemFallback}
                           onChange={e => handleSystemFallback(e.target.value)}
                           style={{ flex: 1, height: 34, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-strong)', background: 'var(--surface)', fontSize: 13 }} />
                       </div>
