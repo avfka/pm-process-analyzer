@@ -300,12 +300,18 @@ export default function DataUpload() {
         )}
       </div>
 
+      {/* Platform selector — always visible */}
+      <PlatformSelector selected={platformId} onChange={id => {
+        setPlatformId(id);
+        if (stage === 'mapping') {
+          const p = PLATFORMS.find(x => x.id === id);
+          if (p) handleSystemFallback(p.system);
+        }
+      }} />
+
       {/* ── IDLE ── */}
       {stage === 'idle' && (
         <>
-          {/* Platform selector */}
-          <PlatformSelector selected={platformId} onChange={setPlatformId} />
-
           <div className="grid-asym" style={{ alignItems: 'start', marginTop: 16 }}>
             <UploadZone platform={platform} onChange={handleFileSelect} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -318,14 +324,7 @@ export default function DataUpload() {
 
       {/* ── MAPPING ── */}
       {stage === 'mapping' && pending && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Platform selector — stays visible so user can change */}
-          <PlatformSelector selected={platformId} onChange={id => {
-            setPlatformId(id);
-            const p = PLATFORMS.find(x => x.id === id);
-            if (p) handleSystemFallback(p.system);
-          }} />
-
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
           {/* File banner */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px', background: 'var(--accent-soft)', borderRadius: 14, border: '1px solid var(--accent-tint)' }}>
             <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
