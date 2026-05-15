@@ -28,6 +28,7 @@ export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
   const [error, setError] = useState<string | null>(null);
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
+  const [hasLoadedDataset, setHasLoadedDataset] = useState(false);
   const stats = analyzer.basicStats;
   const systemsCount = events.length > 0 ? new Set(events.map(event => event.system)).size : 0;
   const previewRows = events.length > 0
@@ -45,12 +46,14 @@ export default function DataUpload() {
     if (isDemoLoaded) return;
     loadDemoData();
     setIsDemoLoaded(true);
+    setHasLoadedDataset(true);
     setError(null);
   };
 
   const handleClearData = () => {
     clearData();
     setIsDemoLoaded(false);
+    setHasLoadedDataset(false);
     setError(null);
   };
 
@@ -79,6 +82,7 @@ export default function DataUpload() {
         }));
         setEvents(parsedEvents);
         setIsDemoLoaded(false);
+        setHasLoadedDataset(true);
         setError(null);
       },
       error: (err) => setError(`Ошибка парсинга CSV: ${err.message}`),
@@ -154,7 +158,7 @@ export default function DataUpload() {
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
                 {isDemoLoaded ? 'Демо-данные загружены' : 'Загрузить демо-набор'}
               </button>
-              {events.length > 0 && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
+              {hasLoadedDataset && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
               {events.length > 0 && <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>}
             </div>
           </div>
