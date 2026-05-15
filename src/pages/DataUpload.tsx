@@ -206,31 +206,15 @@ export default function DataUpload() {
 
       {/* ── IDLE: big upload + demo ── */}
       {stage === 'idle' && (
-        <div className="grid-asym" style={{ alignItems: 'start' }}>
-          <UploadZone onChange={handleFileSelect} />
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
-            <div className="card card-pad">
-              <div className="eyebrow" style={{ marginBottom: 10 }}>Поддерживаемые форматы</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  ['Jira', 'Issue Key, Summary, Created, Assignee'],
-                  ['Notion', 'ID, Name, Created time, Assign'],
-                  ['YouTrack', 'Issue ID, Summary, Created, Spent time'],
-                  ['Linear', 'Identifier, Title, Created at, Assignee'],
-                  ['Google Sheets', 'Любые колонки — сопоставите вручную'],
-                  ['Universal CSV', 'case_id, activity, timestamp, actor…'],
-                ].map(([src, cols]) => (
-                  <div key={src} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 13.5 }}>
-                    <span style={{ fontWeight: 600, color: 'var(--ink)', minWidth: 110 }}>{src}</span>
-                    <span style={{ color: 'var(--ink-muted)', fontFamily: 'var(--f-mono)', fontSize: 12 }}>{cols}</span>
-                  </div>
-                ))}
-              </div>
+        <>
+          <div className="grid-asym" style={{ alignItems: 'start' }}>
+            <UploadZone onChange={handleFileSelect} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
             </div>
           </div>
-        </div>
+          <ExportGuide />
+        </>
       )}
 
       {/* ── MAPPING ── */}
@@ -372,6 +356,7 @@ export default function DataUpload() {
           </div>
 
           <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
+          <ExportGuide />
         </div>
       )}
 
@@ -446,6 +431,142 @@ export default function DataUpload() {
               </table>
             </div>
           </div>
+          <ExportGuide />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Export guide data ────────────────────────────────────── */
+const EXPORT_GUIDES = [
+  {
+    id: 'jira', label: 'Jira', abbr: 'J', color: '#0052CC', bg: '#e6edff',
+    steps: [
+      'Откройте проект → Issues → перейдите в List View',
+      'Нажмите Export → Export CSV (all fields) в правом верхнем углу',
+      'В файле нужны колонки: Issue Key, Summary, Created, Assignee, Story Points',
+    ],
+    cols: 'Issue Key · Summary · Created · Assignee · Story Points',
+  },
+  {
+    id: 'notion', label: 'Notion', abbr: 'N', color: '#191919', bg: '#f0f0f0',
+    steps: [
+      'Откройте базу данных в режиме таблицы (Table view)',
+      'Нажмите ··· (три точки) в правом верхнем углу → Export → Export as CSV',
+      'В базе должны быть поля: Name, Created time, Assign/Owner, Estimate (число, мин)',
+    ],
+    cols: 'ID · Name · Created time · Assign · Estimate',
+  },
+  {
+    id: 'youtrack', label: 'YouTrack', abbr: 'YT', color: '#FF7500', bg: '#fff3e6',
+    steps: [
+      'Перейдите в раздел Issues → отфильтруйте нужные задачи',
+      'Нажмите Export (иконка загрузки) → Export to CSV',
+      'Выберите поля: Issue ID, Summary, Created, Assignee, Spent time',
+    ],
+    cols: 'Issue ID · Summary · Created · Assignee · Spent time',
+  },
+  {
+    id: 'linear', label: 'Linear', abbr: 'LN', color: '#5E6AD2', bg: '#eeeffc',
+    steps: [
+      'Откройте Settings (шестерёнка) → Export → Issues',
+      'Выберите нужную команду и временной диапазон',
+      'CSV скачивается автоматически со всеми полями',
+    ],
+    cols: 'Identifier · Title · Created at · Assignee · Estimate',
+  },
+  {
+    id: 'sheets', label: 'Google Sheets', abbr: 'GS', color: '#0F9D58', bg: '#e6f7ef',
+    steps: [
+      'Создайте таблицу — одна строка = одно событие PM-команды',
+      'Колонки назовите как угодно: маппер сопоставит их сам',
+      'File → Download → Comma Separated Values (.csv)',
+    ],
+    cols: 'Любые · маппер определит автоматически или вручную',
+  },
+  {
+    id: 'confluence', label: 'Confluence', abbr: 'CF', color: '#0747A6', bg: '#e6eeff',
+    steps: [
+      'Space Settings → Content Report → выгрузите список страниц',
+      'Или используйте REST API: /rest/api/content?spaceKey=PM&expand=history',
+      'Нужные поля: ID, Title, Created, Author',
+    ],
+    cols: 'ID · Title · Created · Author · Version',
+  },
+];
+
+function ExportGuide() {
+  const [open, setOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+          background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0',
+          color: 'var(--ink-muted)', fontSize: 13.5, fontWeight: 600,
+        }}
+      >
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+        </svg>
+        Справка: как экспортировать CSV из вашей системы
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div className="card" style={{ paddingBottom: 0 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line-soft)', fontSize: 13, color: 'var(--ink-muted)' }}>
+            Выберите платформу — посмотрите где найти нужные настройки и какие колонки включить в экспорт.
+          </div>
+          {EXPORT_GUIDES.map((g, i) => {
+            const exp = expandedId === g.id;
+            return (
+              <div key={g.id} style={{ borderBottom: i < EXPORT_GUIDES.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
+                <button
+                  onClick={() => setExpandedId(exp ? null : g.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14, width: '100%',
+                    padding: '14px 20px', background: exp ? g.bg + '66' : 'none',
+                    border: 'none', cursor: 'pointer', textAlign: 'left',
+                    transition: 'background .15s',
+                  }}
+                >
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: exp ? g.color : g.bg, color: exp ? '#fff' : g.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: g.abbr.length > 2 ? 9 : g.abbr.length > 1 ? 11 : 14, flexShrink: 0, transition: 'all .15s' }}>
+                    {g.abbr}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{g.label}</div>
+                    {!exp && <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 2, fontFamily: 'var(--f-mono)' }}>{g.cols}</div>}
+                  </div>
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: 'transform .2s', transform: exp ? 'rotate(180deg)' : 'none' }}>
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+
+                {exp && (
+                  <div style={{ padding: '4px 20px 20px 66px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {g.steps.map((step, si) => (
+                      <div key={si} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: g.bg, color: g.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
+                          {si + 1}
+                        </div>
+                        <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>{step}</div>
+                      </div>
+                    ))}
+                    <div style={{ marginTop: 6, padding: '8px 12px', background: 'var(--bg)', borderRadius: 8, fontSize: 12.5, color: 'var(--ink-muted)', fontFamily: 'var(--f-mono)' }}>
+                      Колонки: <span style={{ color: g.color, fontWeight: 600 }}>{g.cols}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
