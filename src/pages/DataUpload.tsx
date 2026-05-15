@@ -128,12 +128,7 @@ export default function DataUpload() {
         </table>
       </div>
 
-      <div className="sec-title">
-        <h2>Загрузка данных</h2>
-        <span className="sec-sub">загрузите свой CSV или используйте демо-набор</span>
-      </div>
-
-      <div className="grid-2">
+      <div className="grid-2" style={{ marginTop: 16 }}>
         {/* Upload */}
         <div className="card card-pad">
           <h3>Импорт CSV</h3>
