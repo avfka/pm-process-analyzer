@@ -449,7 +449,6 @@ export default function DataUpload() {
             </div>
           </div>
 
-          <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
         </div>
       )}
 
