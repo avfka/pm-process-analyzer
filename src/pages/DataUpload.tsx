@@ -460,19 +460,20 @@ export default function DataUpload() {
       {stage === 'loaded' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card card-pad">
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div>
-                <h3>Датасет загружен</h3>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+            {/* Success banner */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--pos-tint, #edfaf3)', borderRadius: 10, marginBottom: 16 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--pos)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--pos)' }}>Данные сохранены и готовы к анализу</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginTop: 2, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {batches.map(b => (
-                    <span key={b.id} className="pill pill-pos" style={{ fontSize: 12 }}>
-                      <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                      {b.fileName} · {b.count}
-                    </span>
+                    <span key={b.id} style={{ fontFamily: 'var(--f-mono)' }}>{b.fileName} ({b.count})</span>
                   ))}
                 </div>
               </div>
-              <label style={{ position: 'relative', cursor: 'pointer' }}>
+              <label style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
                 <span className="btn btn-sm">
                   <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
                   Добавить ещё CSV
@@ -497,32 +498,11 @@ export default function DataUpload() {
             </div>
           </div>
 
-          <div className="sec-title">
-            <h2>Превью</h2>
-            <span className="sec-sub">первые 8 из {events.length} строк</span>
+          <div className="sec-title" style={{ marginTop: 8 }}>
+            <h2>Превью данных</h2>
+            <span className="sec-sub">{new Intl.NumberFormat('ru-RU').format(events.length)} строк</span>
           </div>
-          <div className="card" style={{ paddingBottom: 0 }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
-                <thead><tr>
-                  <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th>
-                  <th style={{ textAlign: 'right' }}>duration</th>
-                </tr></thead>
-                <tbody>
-                  {events.slice(0, 8).map((e, i) => (
-                    <tr key={i}>
-                      <td style={{ color: 'var(--accent)' }}>{e.case_id}</td>
-                      <td style={{ color: 'var(--ink-3)' }}>{e.activity}</td>
-                      <td style={{ color: 'var(--ink-muted)' }}>{e.timestamp}</td>
-                      <td style={{ color: 'var(--ink-3)' }}>{e.actor}</td>
-                      <td style={{ color: 'var(--ink-muted)' }}>{e.system}</td>
-                      <td style={{ textAlign: 'right' }}>{e.duration}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <PreviewTable events={events} />
 
         </div>
       )}
@@ -533,6 +513,57 @@ export default function DataUpload() {
 /* ── Helper ───────────────────────────────────────────────── */
 function selectStyle(borderColor: string): React.CSSProperties {
   return { width: '100%', height: 34, padding: '0 10px', borderRadius: 8, border: `1.5px solid ${borderColor}`, background: 'var(--surface)', fontSize: 13, color: 'var(--ink)', cursor: 'pointer' };
+}
+
+/* ── Preview table with pagination ───────────────────────── */
+const PAGE_SIZE = 10;
+
+function PreviewTable({ events }: { events: ProcessEvent[] }) {
+  const [page, setPage] = useState(0);
+  const total = events.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const rows = events.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const from = page * PAGE_SIZE + 1;
+  const to = Math.min((page + 1) * PAGE_SIZE, total);
+
+  return (
+    <div className="card" style={{ paddingBottom: 0 }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
+          <thead><tr>
+            <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th>
+            <th style={{ textAlign: 'right' }}>duration</th>
+          </tr></thead>
+          <tbody>
+            {rows.map((e, i) => (
+              <tr key={page * PAGE_SIZE + i}>
+                <td style={{ color: 'var(--accent)' }}>{e.case_id}</td>
+                <td style={{ color: 'var(--ink-3)' }}>{e.activity}</td>
+                <td style={{ color: 'var(--ink-muted)' }}>{e.timestamp}</td>
+                <td style={{ color: 'var(--ink-3)' }}>{e.actor}</td>
+                <td style={{ color: 'var(--ink-muted)' }}>{e.system}</td>
+                <td style={{ textAlign: 'right' }}>{e.duration}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {pages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderTop: '1px solid var(--line-soft)' }}>
+          <span style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
+            {new Intl.NumberFormat('ru-RU').format(from)}–{new Intl.NumberFormat('ru-RU').format(to)} из {new Intl.NumberFormat('ru-RU').format(total)}
+          </span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPage(0)} disabled={page === 0} style={{ padding: '0 8px' }}>«</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => p - 1)} disabled={page === 0} style={{ padding: '0 10px' }}>‹</button>
+            <span style={{ display: 'flex', alignItems: 'center', fontSize: 13, color: 'var(--ink-muted)', padding: '0 8px' }}>{page + 1} / {pages}</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => p + 1)} disabled={page >= pages - 1} style={{ padding: '0 10px' }}>›</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPage(pages - 1)} disabled={page >= pages - 1} style={{ padding: '0 8px' }}>»</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ── Platform selector ────────────────────────────────────── */
