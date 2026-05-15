@@ -116,7 +116,7 @@ const FIELD_META: Record<string, { label: string; desc: string; required: boolea
   duration:  { label: 'duration',  desc: 'Длительность в минутах',                 required: true  },
 };
 
-const FIELD_ORDER = ['case_id', 'activity', 'timestamp', 'actor', 'system', 'duration'];
+const FIELD_ORDER = ['case_id', 'activity', 'timestamp', 'actor', 'duration', 'system'];
 
 function autoDetect(headers: string[]): Record<string, string> {
   const mapping: Record<string, string> = {};
@@ -411,7 +411,6 @@ export default function DataUpload() {
                     {isSet && detected && <span className="pill pill-pos" style={{ fontSize: 11.5 }}>✓ автоопределено</span>}
                     {isSet && !detected && <span className="pill" style={{ fontSize: 11.5, background: 'var(--warn-tint)', color: 'var(--warn)' }}>вручную</span>}
                     {!isSet && isMissing && <span className="pill pill-neg" style={{ fontSize: 11.5 }}>обязательное</span>}
-                    {!isSet && !isMissing && <span className="pill" style={{ fontSize: 11.5 }}>не выбрано</span>}
                     {field === 'system' && !selected && (() => {
                       const fp = PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0];
                       return fp.system && pending.systemFallback === fp.system
@@ -421,17 +420,10 @@ export default function DataUpload() {
                   </div>
 
                   <div>
-                    {field === 'system' && !selected ? (
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <select value="" onChange={e => { if (e.target.value) handleMappingChange(field, e.target.value); }}
-                          style={selectStyle('#d4d4d8')}>
-                          <option value="">— из колонки CSV —</option>
-                          {pending.headers.map(h => <option key={h} value={h}>{h}</option>)}
-                        </select>
-                        <input placeholder={(PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0]).system || 'Jira, Slack…'} value={pending.systemFallback}
-                          onChange={e => handleSystemFallback(e.target.value)}
-                          style={{ flex: 1, height: 34, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-strong)', background: 'var(--surface)', fontSize: 13 }} />
-                      </div>
+                    {field === 'system' ? (
+                      <input placeholder={(PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0]).system || 'Jira, Slack…'} value={pending.systemFallback}
+                        onChange={e => handleSystemFallback(e.target.value)}
+                        style={{ width: '100%', height: 34, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-strong)', background: 'var(--surface)', fontSize: 13, boxSizing: 'border-box' }} />
                     ) : (
                       <select value={selected} onChange={e => handleMappingChange(field, e.target.value)}
                         style={selectStyle(isSet ? 'var(--pos)' : isMissing ? 'var(--neg)' : 'var(--line-strong)')}>
@@ -444,17 +436,6 @@ export default function DataUpload() {
               );
             })}
 
-            {/* Unmapped */}
-            {(() => {
-              const used = new Set(Object.values(pending.mapping));
-              const unused = pending.headers.filter(h => !used.has(h));
-              return unused.length > 0 ? (
-                <div style={{ padding: '10px 24px', borderBottom: '1px solid var(--line-soft)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>Игнорируются:</span>
-                  {unused.map(h => <span key={h} className="pill" style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{h}</span>)}
-                </div>
-              ) : null;
-            })()}
 
             {error && (
               <div style={{ margin: '0 24px 12px', padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>
