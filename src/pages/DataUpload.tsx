@@ -129,58 +129,59 @@ export default function DataUpload() {
         </table>
       </div>
 
-      <div className="card card-pad" style={{ marginTop: 16 }}>
-        <h3>Импорт CSV</h3>
+      <div className="grid-2" style={{ marginTop: 16, alignItems: 'stretch' }}>
+        <div className="card card-pad" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <h3>Импорт CSV</h3>
 
-        <div style={{ marginTop: 12, border: '2px dashed var(--line-strong)', borderRadius: 16, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', background: 'var(--surface-2)' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/>
-            </svg>
+          <div style={{ marginTop: 12, border: '2px dashed var(--line-strong)', borderRadius: 16, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center', background: 'var(--surface-2)', flex: 1 }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/>
+              </svg>
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 600, marginTop: 6 }}>Выберите CSV-файл</div>
+            <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, maxWidth: 360 }}>Парсер проверит структуру файла и загрузит события для анализа.</div>
+            <label style={{ position: 'relative', cursor: 'pointer', marginTop: 12 }}>
+              <span className="btn">Выбрать файл</span>
+              <input type="file" accept=".csv" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+            </label>
           </div>
-          <div style={{ fontSize: 17, fontWeight: 600, marginTop: 6 }}>Выберите CSV-файл</div>
-          <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, maxWidth: 360 }}>Парсер проверит структуру файла и загрузит события для анализа.</div>
-          <label style={{ position: 'relative', cursor: 'pointer', marginTop: 12 }}>
-            <span className="btn">Выбрать файл</span>
-            <input type="file" accept=".csv" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
-          </label>
+
+          {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>}
         </div>
 
-        {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>}
-
-      </div>
-
-      <div className="grid-2" style={{ marginTop: 16 }}>
-        <div className="card card-pad" style={{ background: 'var(--warn-tint)' }}>
-          <div className="eyebrow" style={{ color: 'var(--warn)' }}>Для тестирования</div>
-          <h3 style={{ marginTop: 4 }}>Нет файла под рукой?</h3>
-          <div style={{ color: 'var(--ink-3)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
-            Загрузите демо-набор данных, чтобы посмотреть все разделы приложения на примере event log PM-команды.
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
-            <button className="btn btn-primary btn-sm" onClick={handleDemoLoad} disabled={isDemoLoaded}>
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
-              {isDemoLoaded ? 'Демо-данные загружены' : 'Загрузить демо-набор'}
-            </button>
-            {isDemoLoaded && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
-            {isDemoLoaded && <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>}
-          </div>
-        </div>
-
-        <div className="card card-pad">
-          <h3>Соответствие требованиям</h3>
-          {!hasLoadedDataset ? (
-            <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
-              Здесь будет проверка соответствия требованиям после загрузки данных.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="card card-pad" style={{ background: 'var(--warn-tint)' }}>
+            <div className="eyebrow" style={{ color: 'var(--warn)' }}>Для тестирования</div>
+            <h3 style={{ marginTop: 4 }}>Нет файла под рукой?</h3>
+            <div style={{ color: 'var(--ink-3)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
+              Загрузите демо-набор данных, чтобы посмотреть все разделы приложения на примере event log PM-команды.
             </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-              <span className="pill pill-pos">
-                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                Все обязательные поля распознаны
-              </span>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
+              <button className="btn btn-primary btn-sm" onClick={handleDemoLoad} disabled={isDemoLoaded}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
+                {isDemoLoaded ? 'Демо-данные загружены' : 'Загрузить демо-набор'}
+              </button>
+              {isDemoLoaded && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
+              {isDemoLoaded && <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>}
             </div>
-          )}
+          </div>
+
+          <div className="card card-pad" style={{ flex: 1 }}>
+            <h3>Соответствие требованиям</h3>
+            {!hasLoadedDataset ? (
+              <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
+                Здесь будет проверка соответствия требованиям после загрузки данных.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                <span className="pill pill-pos">
+                  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                  Все обязательные поля распознаны
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
