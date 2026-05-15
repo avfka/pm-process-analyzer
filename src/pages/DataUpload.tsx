@@ -372,12 +372,10 @@ export default function DataUpload() {
             subtitle={stage === 'loaded' ? 'Выберите платформу выше, затем загрузите следующий файл' : 'Можно выбрать несколько файлов сразу — каждый пройдёт через маппер'}
             style={{ marginTop: 20 }}
           />
-          <div className="grid-asym" style={{ alignItems: 'start', marginTop: 10 }}>
+          <div className="grid-asym" style={{ alignItems: 'stretch', marginTop: 10 }}>
             <UploadZone platform={platform} onChange={handleFileSelect} />
             {batches.length === 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
-              </div>
+              <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
             )}
           </div>
         </>
@@ -691,7 +689,7 @@ function UploadZone({ platform, onChange }: { platform: PlatformInfo; onChange: 
 /* ── Demo card ────────────────────────────────────────────── */
 function DemoCard({ onLoad, loaded }: { onLoad: () => void; loaded: boolean }) {
   return (
-    <div className="card card-pad" style={{ background: 'linear-gradient(135deg, var(--warn-tint) 0%, #fff8ee 100%)' }}>
+    <div className="card card-pad" style={{ background: 'linear-gradient(135deg, var(--warn-tint) 0%, #fff8ee 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       <div className="eyebrow" style={{ color: 'var(--warn)' }}>Для тестирования</div>
       <h3 style={{ marginTop: 4 }}>Нет файла под рукой?</h3>
       <div style={{ color: 'var(--ink-3)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
