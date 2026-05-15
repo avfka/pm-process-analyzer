@@ -319,6 +319,7 @@ export default function DataUpload() {
       </div>
 
       {/* Platform selector — global in idle/loaded, per-file in mapping */}
+      <StepLabel n={1} title="Выберите платформу" subtitle="Шаги экспорта и нужные колонки обновятся автоматически" />
       <PlatformSelector
         selected={stage === 'mapping' && pending ? pending.platformId : platformId}
         onChange={id => {
@@ -339,7 +340,8 @@ export default function DataUpload() {
       {/* ── IDLE ── */}
       {stage === 'idle' && (
         <>
-          <div className="grid-asym" style={{ alignItems: 'start', marginTop: 16 }}>
+          <StepLabel n={2} title="Загрузите CSV-файл" subtitle="Можно выбрать несколько файлов сразу — каждый пройдёт через маппер" style={{ marginTop: 20 }} />
+          <div className="grid-asym" style={{ alignItems: 'start', marginTop: 10 }}>
             <UploadZone platform={platform} onChange={handleFileSelect} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
@@ -510,9 +512,21 @@ export default function DataUpload() {
   );
 }
 
-/* ── Helper ───────────────────────────────────────────────── */
+/* ── Helpers ──────────────────────────────────────────────── */
 function selectStyle(borderColor: string): React.CSSProperties {
   return { width: '100%', height: 34, padding: '0 10px', borderRadius: 8, border: `1.5px solid ${borderColor}`, background: 'var(--surface)', fontSize: 13, color: 'var(--ink)', cursor: 'pointer' };
+}
+
+function StepLabel({ n, title, subtitle, style }: { n: number; title: string; subtitle: string; style?: React.CSSProperties }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, ...style }}>
+      <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{n}</div>
+      <div>
+        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{title}</span>
+        <span style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginLeft: 8 }}>{subtitle}</span>
+      </div>
+    </div>
+  );
 }
 
 /* ── Preview table with pagination ───────────────────────── */
