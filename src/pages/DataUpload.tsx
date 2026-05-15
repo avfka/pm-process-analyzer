@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { Link } from 'wouter';
 import Papa from 'papaparse';
-import { ProcessEvent } from '@/lib/demo-data';
+import { DEMO_DATA, ProcessEvent } from '@/lib/demo-data';
 
 const SCHEMA = [
   ['case_id',   'string',   'идентификатор кейса',          'CASE-1024'],
   ['activity',  'string',   'название активности',          'Подготовка статус-отчёта'],
   ['timestamp', 'datetime', 'ISO 8601 · UTC',               '2026-04-12T09:15:00Z'],
   ['actor',     'string',   'роль/имя исполнителя',         'PM-Anna'],
-  ['system',    'string',   'источник события',             'Jira'],
+  ['system',    'string',   'источник события или выбранная платформа', 'Jira'],
   ['duration',  'integer',  'длительность в минутах',       '38'],
 ];
 
@@ -34,12 +34,20 @@ const DATA_SOURCES = [
   { id: 'sheets', label: 'Google Sheets', hint: 'ручной журнал активностей' },
 ];
 
+interface ImportBatch {
+  id: string;
+  source: string;
+  fileName: string;
+  count: number;
+}
+
 export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
   const [error, setError] = useState<string | null>(null);
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
   const [hasLoadedDataset, setHasLoadedDataset] = useState(false);
   const [selectedSourceId, setSelectedSourceId] = useState('universal');
+  const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
   const stats = analyzer.basicStats;
   const selectedSource = DATA_SOURCES.find(source => source.id === selectedSourceId) ?? DATA_SOURCES[0];
   const shouldShowDataset = hasLoadedDataset && events.length > 0;
@@ -60,6 +68,7 @@ export default function DataUpload() {
     loadDemoData();
     setIsDemoLoaded(true);
     setHasLoadedDataset(true);
+    setImportBatches([{ id: 'demo', source: 'Demo', fileName: 'demo-event-log.csv', count: DEMO_DATA.length }]);
     setError(null);
   };
 
@@ -67,46 +76,88 @@ export default function DataUpload() {
     clearData();
     setIsDemoLoaded(false);
     setHasLoadedDataset(false);
+    setImportBatches([]);
     setError(null);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const fields = results.meta.fields || [];
-        const requiredFields = ['case_id', 'activity', 'timestamp', 'actor', 'system', 'duration'];
-        const missing = requiredFields.filter(f => !fields.includes(f));
-        if (missing.length > 0) {
-          setError(`Отсутствуют обязательные поля: ${missing.join(', ')}`);
-          return;
-        }
-        const rows = results.data as any[];
-        const validDurations = rows
-          .map((row: any) => Number(row.duration))
-          .filter((duration: number) => Number.isFinite(duration) && duration > 0);
-        const avgDuration = validDurations.length > 0
-          ? Math.round(validDurations.reduce((sum: number, duration: number) => sum + duration, 0) / validDurations.length)
-          : 1;
-        const parsedEvents: ProcessEvent[] = rows.map((row: any) => ({
-          case_id: row.case_id,
-          activity: row.activity,
-          timestamp: row.timestamp,
-          actor: row.actor,
-          system: row.system || selectedSource.label,
-          duration: Number(row.duration) || avgDuration,
-        }));
-        setEvents(parsedEvents);
-        setIsDemoLoaded(false);
-        setHasLoadedDataset(true);
-        setError(null);
-      },
-      error: (err) => setError(`Ошибка парсинга CSV: ${err.message}`),
+  const parseCsvFile = (file: File, sourceLabel: string) =>
+    new Promise<ProcessEvent[]>((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const fields = results.meta.fields || [];
+          const requiredFields = ['case_id', 'activity', 'timestamp', 'actor', 'duration'];
+          const missing = requiredFields.filter(f => !fields.includes(f));
+          if (missing.length > 0) {
+            reject(new Error(`${file.name}: отсутствуют обязательные поля: ${missing.join(', ')}`));
+            return;
+          }
+          const rows = results.data as any[];
+          const validDurations = rows
+            .map((row: any) => Number(row.duration))
+            .filter((duration: number) => Number.isFinite(duration) && duration > 0);
+          const avgDuration = validDurations.length > 0
+            ? Math.round(validDurations.reduce((sum: number, duration: number) => sum + duration, 0) / validDurations.length)
+            : 1;
+          const parsedEvents: ProcessEvent[] = rows.map((row: any) => ({
+            case_id: row.case_id,
+            activity: row.activity,
+            timestamp: row.timestamp,
+            actor: row.actor,
+            system: row.system || sourceLabel,
+            duration: Number(row.duration) || avgDuration,
+          }));
+          resolve(parsedEvents);
+        },
+        error: (err) => reject(new Error(`${file.name}: ошибка парсинга CSV: ${err.message}`)),
+      });
     });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    try {
+      const parsedGroups = await Promise.all(files.map(file => parseCsvFile(file, selectedSource.label)));
+      const parsedEvents = parsedGroups.flat();
+      const nextEvents = hasLoadedDataset ? [...events, ...parsedEvents] : parsedEvents;
+      const nextBatches = files.map((file, index) => ({
+        id: `${selectedSource.id}-${file.name}-${Date.now()}-${index}`,
+        source: selectedSource.label,
+        fileName: file.name,
+        count: parsedGroups[index].length,
+      }));
+
+      setEvents(nextEvents);
+      setIsDemoLoaded(false);
+      setHasLoadedDataset(true);
+      setImportBatches(prev => hasLoadedDataset ? [...prev, ...nextBatches] : nextBatches);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось обработать CSV-файл');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleExportCombinedCsv = () => {
+    if (!shouldShowDataset) return;
+    const csv = Papa.unparse(events.map(event => ({
+      case_id: event.case_id,
+      activity: event.activity,
+      timestamp: event.timestamp,
+      actor: event.actor,
+      system: event.system,
+      duration: event.duration,
+    })));
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'combined-event-log.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -124,7 +175,7 @@ export default function DataUpload() {
       <div className="card card-pad">
         <h3>Источник данных</h3>
         <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, lineHeight: 1.55, marginTop: 4 }}>
-          Выберите систему, из которой получена выгрузка. Приложение будет приводить данные к единому формату event log для дальнейшего анализа.
+          Выберите систему перед каждой загрузкой. Можно импортировать несколько CSV из разных трекеров: приложение объединит их в один event log для дальнейшего анализа.
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
           {DATA_SOURCES.map(source => {
@@ -150,7 +201,7 @@ export default function DataUpload() {
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
           <h3>Требования к CSV-файлу</h3>
           <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13, lineHeight: 1.5 }}>
-            Названия столбцов в CSV должны точно совпадать со значениями из колонки «Поле», а данные в каждом столбце должны соответствовать указанному типу. Чем больше событий и кейсов в файле, тем точнее аналитика. Пропущенные числовые значения будут заменены усреднёнными, если это возможно.
+            Названия обязательных столбцов в CSV должны точно совпадать со значениями из колонки «Поле», а данные в каждом столбце должны соответствовать указанному типу. Поле system можно передать в файле или подставить выбранной платформой. Чем больше событий и кейсов в файле, тем точнее аналитика. Пропущенные числовые значения будут заменены усреднёнными, если это возможно.
           </div>
         </div>
         <table className="t">
@@ -187,10 +238,10 @@ export default function DataUpload() {
               </svg>
             </div>
             <div style={{ fontSize: 17, fontWeight: 600, marginTop: 6 }}>Выберите CSV-файл</div>
-            <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, maxWidth: 360 }}>Парсер проверит структуру файла и загрузит события для анализа.</div>
+            <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, maxWidth: 420 }}>Парсер проверит структуру файла и добавит события к общему датасету.</div>
             <label style={{ position: 'relative', cursor: 'pointer', marginTop: 12 }}>
-              <span className="btn">Выбрать файл</span>
-              <input type="file" accept=".csv" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+              <span className="btn">Выбрать CSV</span>
+              <input type="file" accept=".csv" multiple onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
             </label>
           </div>
 
@@ -226,6 +277,9 @@ export default function DataUpload() {
                   <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
                   Все обязательные поля распознаны
                 </span>
+                {importBatches.length > 0 && (
+                  <span className="pill">{importBatches.length} импорт(ов)</span>
+                )}
               </div>
             )}
           </div>
@@ -246,6 +300,10 @@ export default function DataUpload() {
               <span className="pill pill-pos">{stats.totalCases} кейсов</span>
               <span className="pill pill-pos">{stats.totalActors} участников</span>
               <span className="pill">{systemsCount} систем</span>
+              {importBatches.map(batch => (
+                <span key={batch.id} className="pill">{batch.source} · {batch.fileName}: {batch.count}</span>
+              ))}
+              <button className="btn btn-sm" onClick={handleExportCombinedCsv} style={{ marginLeft: 'auto' }}>Скачать общий CSV</button>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
