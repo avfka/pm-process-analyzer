@@ -156,7 +156,9 @@ export default function DataUpload() {
         <div className="card table-wrap" style={{ paddingBottom: 0 }}>
           <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
             <h3>Требования к CSV-файлу</h3>
-            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>Пример обязательных полей Event log</div>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13, lineHeight: 1.5 }}>
+              Названия столбцов в CSV должны точно совпадать со значениями из колонки «Поле», а данные в каждом столбце должны соответствовать указанному типу.
+            </div>
           </div>
           <table className="t">
             <thead><tr>
