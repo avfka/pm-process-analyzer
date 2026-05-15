@@ -304,17 +304,7 @@ export default function DataUpload() {
           </div>
         </div>
         {stage === 'loaded' && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {lastPending && (
-              <button className="btn btn-sm" onClick={handleEditMapping}>
-                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Изменить маппинг
-              </button>
-            )}
-            <button className="btn btn-sm" onClick={handleClear}>Сбросить</button>
-            <button className="btn btn-sm" onClick={handleExport}>Скачать CSV</button>
-            <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>
-          </div>
+          <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>
         )}
       </div>
 
@@ -462,30 +452,42 @@ export default function DataUpload() {
       {stage === 'loaded' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card card-pad">
-            {/* Success banner */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--pos-tint, #edfaf3)', borderRadius: 10, marginBottom: 16 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--pos)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--pos)' }}>Данные сохранены и готовы к анализу</div>
-                <div style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginTop: 2, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {batches.map(b => (
-                    <span key={b.id} style={{ fontFamily: 'var(--f-mono)' }}>{b.fileName} ({b.count})</span>
-                  ))}
-                </div>
-              </div>
-              <label style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
-                <span className="btn btn-sm">
-                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
-                  Добавить ещё CSV
-                </span>
+            {/* Batch list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {batches.map((b, i) => {
+                const isLast = i === batches.length - 1;
+                return (
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'var(--pos-tint, #edfaf3)', borderRadius: 10 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pos)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                    </div>
+                    <div style={{ flex: 1, fontSize: 13.5, fontFamily: 'var(--f-mono)' }}>
+                      {b.fileName}
+                      <span style={{ color: 'var(--ink-muted)', marginLeft: 8 }}>{b.count} строк</span>
+                    </div>
+                    {isLast && lastPending && (
+                      <button className="btn btn-ghost btn-sm" onClick={handleEditMapping}>
+                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Изменить маппинг
+                      </button>
+                    )}
+                    {isLast && (
+                      <button className="btn btn-ghost btn-sm" onClick={handleClear} style={{ color: 'var(--neg)' }}>
+                        Сбросить
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 10, border: '1.5px dashed var(--line-strong)', cursor: 'pointer', color: 'var(--ink-muted)', fontSize: 13.5, position: 'relative' }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
+                Добавить ещё CSV
                 <input type="file" accept=".csv" multiple onChange={handleFileSelect}
                   style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
               </label>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
               {[
                 ['События', new Intl.NumberFormat('ru-RU').format(events.length)],
                 ['Кейсы', stats.totalCases],
@@ -502,7 +504,11 @@ export default function DataUpload() {
 
           <div className="sec-title" style={{ marginTop: 8 }}>
             <h2>Превью данных</h2>
-            <span className="sec-sub">{new Intl.NumberFormat('ru-RU').format(events.length)} строк</span>
+            <span className="sec-sub">{new Intl.NumberFormat('ru-RU').format(events.length)} строк из всех файлов</span>
+            <button className="btn btn-sm" onClick={handleExport} style={{ marginLeft: 'auto' }}>
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6" transform="rotate(180 12 12)"/></svg>
+              Скачать объединённый CSV
+            </button>
           </div>
           <PreviewTable events={events} />
 
