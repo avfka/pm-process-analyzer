@@ -99,14 +99,6 @@ export default function DataUpload() {
             Загрузите CSV-файл с event log. Приложение проверит структуру файла и построит аналитику по процессам PM-команды.
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {events.length > 0
-            ? <span className="pill pill-pos">
-                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                Схема ок
-              </span>
-            : null}
-        </div>
       </div>
 
       <div className="card table-wrap" style={{ paddingBottom: 0 }}>
@@ -122,7 +114,6 @@ export default function DataUpload() {
             <th>Тип</th>
             <th>Описание</th>
             <th>Пример</th>
-            <th style={{ textAlign: 'right' }}>Соответствие</th>
           </tr></thead>
           <tbody>
             {SCHEMA.map(([f, t, d, ex]) => (
@@ -131,15 +122,6 @@ export default function DataUpload() {
                 <td className="muted">{t}</td>
                 <td>{d}</td>
                 <td className="muted" style={{ fontFamily: 'var(--f-mono)', fontSize: 12.5 }}>{ex}</td>
-                <td style={{ textAlign: 'right' }}>
-                  {events.length > 0 ? (
-                    <span className="pill pill-pos">
-                      <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                    </span>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
@@ -155,11 +137,8 @@ export default function DataUpload() {
         {/* Upload */}
         <div className="card card-pad">
           <h3>Импорт CSV</h3>
-          <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, marginTop: 4, lineHeight: 1.55 }}>
-            Файл должен содержать обязательные поля, указанные в требованиях к CSV. После загрузки приложение покажет первые 8 строк и статус распознавания в превью.
-          </div>
 
-          <div style={{ marginTop: 20, border: '2px dashed var(--line-strong)', borderRadius: 16, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', background: 'var(--surface-2)' }}>
+          <div style={{ marginTop: 12, border: '2px dashed var(--line-strong)', borderRadius: 16, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', background: 'var(--surface-2)' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/>
@@ -177,32 +156,50 @@ export default function DataUpload() {
 
         </div>
 
-        <div className="card card-pad" style={{ background: 'var(--warn-tint)' }}>
-          <div className="eyebrow" style={{ color: 'var(--warn)' }}>Для тестирования</div>
-          <h3 style={{ marginTop: 4 }}>Нет файла под рукой?</h3>
-          <div style={{ color: 'var(--ink-3)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
-            Загрузите демо-набор данных, чтобы посмотреть все разделы приложения на примере event log PM-команды.
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
-            <button className="btn btn-primary btn-sm" onClick={handleDemoLoad} disabled={isDemoLoaded}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="card card-pad" style={{ background: 'var(--warn-tint)' }}>
+            <div className="eyebrow" style={{ color: 'var(--warn)' }}>Для тестирования</div>
+            <h3 style={{ marginTop: 4 }}>Нет файла под рукой?</h3>
+            <div style={{ color: 'var(--ink-3)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
+              Загрузите демо-набор данных, чтобы посмотреть все разделы приложения на примере event log PM-команды.
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={handleDemoLoad} disabled={isDemoLoaded} style={{ marginTop: 16 }}>
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
               {isDemoLoaded ? 'Демо-данные загружены' : 'Загрузить демо-набор'}
             </button>
-            {hasLoadedDataset && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
-            {events.length > 0 && <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>}
+          </div>
+
+          <div className="card card-pad">
+            <h3>Соответствие требованиям</h3>
+            {events.length === 0 ? (
+              <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
+                Здесь появится результат соответствия требованиям после загрузки CSV-файла.
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                  <span className="pill pill-pos">
+                    <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                    Все обязательные поля распознаны
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
+                  {hasLoadedDataset && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
+                  <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="sec-title">
-        <h2>Превью</h2>
-        <span className="sec-sub">{events.length > 0 ? 'первые 8 строк датасета' : 'ожидается загрузка файла'}</span>
-      </div>
-      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
-        {events.length === 0 ? (
-          <div style={{ padding: 32, color: 'var(--ink-muted)', fontSize: 14 }}>Данные не загружены</div>
-        ) : (
-          <>
+      {events.length > 0 && (
+        <>
+          <div className="sec-title">
+            <h2>Превью</h2>
+            <span className="sec-sub">первые 8 строк датасета</span>
+          </div>
+          <div className="card table-wrap" style={{ paddingBottom: 0 }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line-soft)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span className="pill pill-pos">{new Intl.NumberFormat('ru-RU').format(events.length)} событий</span>
               <span className="pill pill-pos">{stats.totalCases} кейсов</span>
@@ -225,9 +222,9 @@ export default function DataUpload() {
                 </tbody>
               </table>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
