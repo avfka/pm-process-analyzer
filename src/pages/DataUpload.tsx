@@ -232,9 +232,10 @@ export default function DataUpload() {
 
     if (!parsed.length) { setError('После маппинга нет валидных строк. Проверьте колонки.'); return; }
 
-    setEvents(stage === 'loaded' ? [...events, ...parsed] : parsed);
+    const hasExisting = events.length > 0;
+    setEvents(hasExisting ? [...events, ...parsed] : parsed);
     setLastPending(pending);
-    setBatches(prev => [...(stage === 'loaded' || fileQueue.length > 0 ? prev : []), { id: `${fileName}-${Date.now()}`, fileName, count: parsed.length }]);
+    setBatches(prev => [...(hasExisting || fileQueue.length > 0 ? prev : []), { id: `${fileName}-${Date.now()}`, fileName, count: parsed.length }]);
     setIsDemoLoaded(false);
     setError(null);
 
