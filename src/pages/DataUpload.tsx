@@ -151,6 +151,7 @@ interface ImportBatch {
   fileName: string;
   count: number;
   pending: PendingFile;
+  events: ProcessEvent[];
 }
 
 /* ── Main component ───────────────────────────────────────── */
@@ -159,7 +160,7 @@ export default function DataUpload() {
 
   const [stage, setStage] = useState<Stage>(events.length > 0 ? 'loaded' : 'idle');
   const [pending, setPending] = useState<PendingFile | null>(null);
-  const [lastPending, setLastPending] = useState<PendingFile | null>(null);
+  const [editingBatchId, setEditingBatchId] = useState<string | null>(null);
   const [fileQueue, setFileQueue] = useState<File[]>([]);
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
@@ -169,6 +170,8 @@ export default function DataUpload() {
   const platform = PLATFORMS.find(p => p.id === platformId) ?? PLATFORMS[0];
   const stats = analyzer.basicStats;
   const systemsCount = new Set(events.map(e => e.system)).size;
+
+  const rebuildEvents = (bs: ImportBatch[]) => bs.flatMap(b => b.events);
 
   /* ── Parse one file ─────────────────────────────────────── */
   const parseFile = (file: File, filePlatformId: string) => {
@@ -212,17 +215,13 @@ export default function DataUpload() {
   const handleSystemFallback = (val: string) =>
     setPending(p => p ? { ...p, systemFallback: val } : p);
 
-  const handleApplyMapping = () => {
-    if (!pending) return;
-    const { rawRows, mapping, systemFallback, fileName } = pending;
-
+  const parsePending = (pf: PendingFile): ProcessEvent[] | null => {
+    const { rawRows, mapping, systemFallback } = pf;
     const missing = FIELD_ORDER.filter(f => FIELD_META[f].required && !mapping[f]);
-    if (missing.length) { setError(`Сопоставьте обязательные поля: ${missing.join(', ')}`); return; }
-
+    if (missing.length) { setError(`Сопоставьте обязательные поля: ${missing.join(', ')}`); return null; }
     const durations = rawRows.map(r => Number(r[mapping.duration])).filter(d => isFinite(d) && d > 0);
     const avgDur = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 30;
-
-    const parsed: ProcessEvent[] = rawRows.map(r => ({
+    const parsed = rawRows.map(r => ({
       case_id:   String(r[mapping.case_id]   ?? ''),
       activity:  String(r[mapping.activity]   ?? ''),
       timestamp: String(r[mapping.timestamp]  ?? ''),
@@ -230,13 +229,35 @@ export default function DataUpload() {
       system:    mapping.system ? (String(r[mapping.system] ?? '') || systemFallback || 'Unknown') : (systemFallback || 'Unknown'),
       duration:  Number(r[mapping.duration])  || avgDur,
     })).filter(e => e.case_id && e.activity);
+    if (!parsed.length) { setError('После маппинга нет валидных строк. Проверьте колонки.'); return null; }
+    return parsed;
+  };
 
-    if (!parsed.length) { setError('После маппинга нет валидных строк. Проверьте колонки.'); return; }
+  const handleApplyMapping = () => {
+    if (!pending) return;
+    const parsed = parsePending(pending);
+    if (!parsed) return;
 
-    const hasExisting = events.length > 0;
-    setEvents(hasExisting ? [...events, ...parsed] : parsed);
-    setLastPending(pending);
-    setBatches(prev => [...(hasExisting || fileQueue.length > 0 ? prev : []), { id: `${fileName}-${Date.now()}`, fileName, count: parsed.length, pending }]);
+    let newBatches: ImportBatch[];
+    if (editingBatchId) {
+      newBatches = batches.map(b =>
+        b.id === editingBatchId
+          ? { ...b, count: parsed.length, pending, events: parsed }
+          : b
+      );
+      setEditingBatchId(null);
+      setBatches(newBatches);
+      setEvents(rebuildEvents(newBatches));
+      setPending(null);
+      setStage('loaded');
+      setError(null);
+      return;
+    }
+
+    const newBatch: ImportBatch = { id: `${pending.fileName}-${Date.now()}`, fileName: pending.fileName, count: parsed.length, pending, events: parsed };
+    newBatches = batches.length > 0 || fileQueue.length > 0 ? [...batches, newBatch] : [newBatch];
+    setBatches(newBatches);
+    setEvents(rebuildEvents(newBatches));
     setIsDemoLoaded(false);
     setError(null);
 
@@ -250,14 +271,28 @@ export default function DataUpload() {
     }
   };
 
-  const handleEditMapping = (pf: PendingFile) => {
-    setPending({ ...pf, mapping: autoDetect(pf.headers) });
+  const handleEditMapping = (batch: ImportBatch) => {
+    setEditingBatchId(batch.id);
+    setPending({ ...batch.pending, mapping: autoDetect(batch.pending.headers) });
     setStage('mapping');
+  };
+
+  const handleRemoveBatch = (batchId: string) => {
+    const newBatches = batches.filter(b => b.id !== batchId);
+    setBatches(newBatches);
+    if (newBatches.length === 0) {
+      clearData();
+      setIsDemoLoaded(false);
+      setStage('idle');
+    } else {
+      setEvents(rebuildEvents(newBatches));
+    }
   };
 
   const handleCancelMapping = () => {
     setFileQueue([]);
     setPending(null);
+    setEditingBatchId(null);
     setError(null);
     setStage(events.length > 0 ? 'loaded' : 'idle');
   };
@@ -268,7 +303,8 @@ export default function DataUpload() {
     loadDemoData();
     setIsDemoLoaded(true);
     setStage('loaded');
-    setBatches([{ id: 'demo', fileName: 'demo-event-log.csv', count: DEMO_DATA.length, pending: { fileName: 'demo-event-log.csv', headers: [], rawRows: [], mapping: {}, systemFallback: '', platformId: 'universal' } }]);
+    const demoBatch: ImportBatch = { id: 'demo', fileName: 'demo-event-log.csv', count: DEMO_DATA.length, events: DEMO_DATA, pending: { fileName: 'demo-event-log.csv', headers: [], rawRows: [], mapping: {}, systemFallback: '', platformId: 'universal' } };
+    setBatches([demoBatch]);
     setPending(null);
     setError(null);
   };
@@ -278,7 +314,7 @@ export default function DataUpload() {
     setIsDemoLoaded(false);
     setStage('idle');
     setPending(null);
-    setLastPending(null);
+    setEditingBatchId(null);
     setBatches([]);
     setError(null);
   };
@@ -468,12 +504,12 @@ export default function DataUpload() {
                     <span style={{ color: 'var(--ink-muted)', marginLeft: 8 }}>{b.count} строк</span>
                   </div>
                   {b.pending.headers.length > 0 && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleEditMapping(b.pending)}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleEditMapping(b)}>
                       <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       Изменить маппинг
                     </button>
                   )}
-                  <button className="btn btn-ghost btn-sm" onClick={handleClear} style={{ color: 'var(--neg)' }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleRemoveBatch(b.id)} style={{ color: 'var(--neg)' }}>
                     Сбросить
                   </button>
                 </div>
