@@ -344,7 +344,6 @@ export default function DataUpload() {
               <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
             </div>
           </div>
-          <ExportGuide />
         </>
       )}
 
@@ -472,7 +471,6 @@ export default function DataUpload() {
           </div>
 
           <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
-          <ExportGuide />
         </div>
       )}
 
@@ -544,7 +542,6 @@ export default function DataUpload() {
             </div>
           </div>
 
-          <ExportGuide />
         </div>
       )}
     </div>
@@ -578,15 +575,21 @@ function PlatformSelector({ selected, onChange }: { selected: string; onChange: 
           );
         })}
       </div>
-      {/* Mini hint */}
-      <div style={{ marginTop: 10, padding: '10px 16px', background: platform.bg, borderRadius: 10, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={platform.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-        </svg>
-        <div>
-          <span style={{ fontSize: 13, color: platform.color, fontWeight: 600 }}>{platform.mini}</span>
-          <span style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginLeft: 10, fontFamily: 'var(--f-mono)' }}>{platform.cols}</span>
-        </div>
+      {/* Steps for selected platform */}
+      <div style={{ marginTop: 10, padding: '14px 18px', background: platform.bg, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {platform.steps.map((step, i) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: platform.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
+              {i + 1}
+            </div>
+            <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>{step}</div>
+          </div>
+        ))}
+        {platform.cols && (
+          <div style={{ marginTop: 4, padding: '6px 10px', background: '#fff5', borderRadius: 8, fontSize: 12, color: platform.color, fontFamily: 'var(--f-mono)', fontWeight: 600 }}>
+            {platform.cols}
+          </div>
+        )}
       </div>
     </div>
   );
