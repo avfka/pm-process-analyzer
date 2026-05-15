@@ -642,10 +642,8 @@ function PlatformSelector({ selected, onChange }: { selected: string; onChange: 
       {/* Steps for selected platform */}
       <div style={{ marginTop: 10, padding: '14px 18px', background: platform.bg, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {platform.steps.map((step, i) => (
-          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', background: platform.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
-              {i + 1}
-            </div>
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <div style={{ width: 4, height: 4, borderRadius: '50%', background: platform.color, flexShrink: 0, marginTop: 8 }} />
             <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>{step}</div>
           </div>
         ))}
