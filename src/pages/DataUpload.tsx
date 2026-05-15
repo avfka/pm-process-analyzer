@@ -134,17 +134,6 @@ export default function DataUpload() {
 
             {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>}
 
-            {events.length > 0 && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-                <span className="pill pill-pos">
-                  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                  Заголовки
-                </span>
-                <span className="pill pill-pos">{events.length} строки</span>
-                <span className="pill pill-pos">0 пропусков</span>
-                <span className="pill">UTF-8</span>
-              </div>
-            )}
           </div>
 
           <div className="card card-pad" style={{ background: 'var(--warn-tint)' }}>
@@ -167,7 +156,7 @@ export default function DataUpload() {
         <div className="card table-wrap" style={{ paddingBottom: 0 }}>
           <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
             <h3>Требования к CSV-файлу</h3>
-            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>эти поля проверяются при загрузке</div>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>Пример обязательных полей Event log</div>
           </div>
           <table className="t">
             <thead><tr>
