@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { Link } from 'wouter';
 import Papa from 'papaparse';
@@ -154,6 +154,8 @@ interface ImportBatch {
   events: ProcessEvent[];
 }
 
+const BATCHES_KEY = 'pm-analyzer-batches';
+
 /* ── Main component ───────────────────────────────────────── */
 export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
@@ -162,7 +164,12 @@ export default function DataUpload() {
   const [pending, setPending] = useState<PendingFile | null>(null);
   const [editingBatchId, setEditingBatchId] = useState<string | null>(null);
   const [fileQueue, setFileQueue] = useState<File[]>([]);
-  const [batches, setBatches] = useState<ImportBatch[]>([]);
+  const [batches, setBatches] = useState<ImportBatch[]>(() => {
+    try {
+      const saved = localStorage.getItem(BATCHES_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [platformId, setPlatformId] = useState('universal');
@@ -172,6 +179,17 @@ export default function DataUpload() {
   const systemsCount = new Set(events.map(e => e.system)).size;
 
   const rebuildEvents = (bs: ImportBatch[]) => bs.flatMap(b => b.events);
+
+  useEffect(() => {
+    try {
+      if (batches.length > 0) {
+        const slim = batches.map(b => ({ ...b, pending: { ...b.pending, rawRows: [] } }));
+        localStorage.setItem(BATCHES_KEY, JSON.stringify(slim));
+      } else {
+        localStorage.removeItem(BATCHES_KEY);
+      }
+    } catch {}
+  }, [batches]);
 
   /* ── Parse one file ─────────────────────────────────────── */
   const parseFile = (file: File, filePlatformId: string) => {
@@ -393,7 +411,9 @@ export default function DataUpload() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                {pending.fileName}
+                {editingBatchId
+                  ? <><span style={{ color: 'var(--ink-muted)', fontWeight: 400 }}>Редактирование:</span> {pending.fileName}</>
+                  : pending.fileName}
                 {fileQueue.length > 0 && (
                   <span className="pill" style={{ fontSize: 11, background: 'var(--accent-tint)', color: 'var(--accent)' }}>
                     ещё {fileQueue.length} в очереди
@@ -429,7 +449,8 @@ export default function DataUpload() {
                   display: 'grid', gridTemplateColumns: '200px 1fr 280px',
                   gap: 16, alignItems: 'center', padding: '13px 24px',
                   borderBottom: '1px solid var(--line-soft)',
-                  background: isMissing ? '#fff5f5' : undefined,
+                  background: isMissing ? '#fff5f5' : !meta.required ? 'var(--bg)' : undefined,
+                  opacity: !meta.required ? 0.75 : 1,
                 }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -509,11 +530,19 @@ export default function DataUpload() {
                       Изменить маппинг
                     </button>
                   )}
-                  <button className="btn btn-ghost btn-sm" onClick={() => handleRemoveBatch(b.id)} style={{ color: 'var(--neg)' }}>
-                    Сбросить
+                  <div style={{ width: 1, height: 18, background: 'var(--line-soft)', margin: '0 2px', flexShrink: 0 }} />
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--neg)' }}
+                    onClick={() => { if (window.confirm(`Удалить «${b.fileName}»? Его события исчезнут из датасета.`)) handleRemoveBatch(b.id); }}>
+                    Удалить
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* К AS-IS nudge */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--accent-soft)', borderRadius: 10, marginBottom: 16 }}>
+              <span style={{ fontSize: 13.5, color: 'var(--accent-2)', fontWeight: 500 }}>Данные готовы — можно перейти к анализу</span>
+              <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS анализу →</a></Link>
             </div>
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
