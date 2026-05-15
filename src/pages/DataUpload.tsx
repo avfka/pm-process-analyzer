@@ -516,17 +516,17 @@ export default function DataUpload() {
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {[
                 ['События', new Intl.NumberFormat('ru-RU').format(events.length)],
                 ['Кейсы', stats.totalCases],
                 ['Участники', stats.totalActors],
                 ['Системы', systemsCount],
               ].map(([k, v]) => (
-                <div key={String(k)} style={{ padding: '12px 16px', background: 'var(--bg)', borderRadius: 12 }}>
-                  <div style={{ fontSize: 11, color: 'var(--ink-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{k}</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, marginTop: 4, letterSpacing: '-0.02em' }}>{v}</div>
-                </div>
+                <span key={String(k)} className="pill" style={{ fontSize: 12.5, padding: '4px 10px' }}>
+                  <span style={{ color: 'var(--ink-muted)', marginRight: 5 }}>{k}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--ink)' }}>{v}</span>
+                </span>
               ))}
             </div>
           </div>
