@@ -327,10 +327,15 @@ export default function DataUpload() {
         }}
       />
 
-      {/* ── IDLE ── */}
-      {stage === 'idle' && (
+      {/* ── STEP 2: upload — shown in idle and loaded ── */}
+      {stage !== 'mapping' && (
         <>
-          <StepLabel n={2} title="Загрузите CSV-файл" subtitle="Можно выбрать несколько файлов сразу — каждый пройдёт через маппер" style={{ marginTop: 20 }} />
+          <StepLabel
+            n={2}
+            title={stage === 'loaded' ? 'Добавить файл из другой платформы' : 'Загрузите CSV-файл'}
+            subtitle={stage === 'loaded' ? 'Выберите платформу выше, затем загрузите следующий файл' : 'Можно выбрать несколько файлов сразу — каждый пройдёт через маппер'}
+            style={{ marginTop: 20 }}
+          />
           <div className="grid-asym" style={{ alignItems: 'start', marginTop: 10 }}>
             <UploadZone platform={platform} onChange={handleFileSelect} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -479,12 +484,6 @@ export default function DataUpload() {
                   </div>
                 );
               })}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 10, border: '1.5px dashed var(--line-strong)', cursor: 'pointer', color: 'var(--ink-muted)', fontSize: 13.5, position: 'relative' }}>
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
-                Добавить ещё CSV
-                <input type="file" accept=".csv" multiple onChange={handleFileSelect}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
-              </label>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
