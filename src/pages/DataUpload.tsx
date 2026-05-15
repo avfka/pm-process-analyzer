@@ -150,6 +150,7 @@ interface ImportBatch {
   id: string;
   fileName: string;
   count: number;
+  pending: PendingFile;
 }
 
 /* ── Main component ───────────────────────────────────────── */
@@ -235,7 +236,7 @@ export default function DataUpload() {
     const hasExisting = events.length > 0;
     setEvents(hasExisting ? [...events, ...parsed] : parsed);
     setLastPending(pending);
-    setBatches(prev => [...(hasExisting || fileQueue.length > 0 ? prev : []), { id: `${fileName}-${Date.now()}`, fileName, count: parsed.length }]);
+    setBatches(prev => [...(hasExisting || fileQueue.length > 0 ? prev : []), { id: `${fileName}-${Date.now()}`, fileName, count: parsed.length, pending }]);
     setIsDemoLoaded(false);
     setError(null);
 
@@ -249,9 +250,8 @@ export default function DataUpload() {
     }
   };
 
-  const handleEditMapping = () => {
-    if (!lastPending) return;
-    setPending({ ...lastPending, mapping: autoDetect(lastPending.headers) });
+  const handleEditMapping = (pf: PendingFile) => {
+    setPending({ ...pf, mapping: autoDetect(pf.headers) });
     setStage('mapping');
   };
 
@@ -268,7 +268,7 @@ export default function DataUpload() {
     loadDemoData();
     setIsDemoLoaded(true);
     setStage('loaded');
-    setBatches([{ id: 'demo', fileName: 'demo-event-log.csv', count: DEMO_DATA.length }]);
+    setBatches([{ id: 'demo', fileName: 'demo-event-log.csv', count: DEMO_DATA.length, pending: { fileName: 'demo-event-log.csv', headers: [], rawRows: [], mapping: {}, systemFallback: '', platformId: 'universal' } }]);
     setPending(null);
     setError(null);
   };
@@ -458,31 +458,26 @@ export default function DataUpload() {
           <div className="card card-pad">
             {/* Batch list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-              {batches.map((b, i) => {
-                const isLast = i === batches.length - 1;
-                return (
-                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'var(--pos-tint, #edfaf3)', borderRadius: 10 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pos)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                    </div>
-                    <div style={{ flex: 1, fontSize: 13.5, fontFamily: 'var(--f-mono)' }}>
-                      {b.fileName}
-                      <span style={{ color: 'var(--ink-muted)', marginLeft: 8 }}>{b.count} строк</span>
-                    </div>
-                    {isLast && lastPending && (
-                      <button className="btn btn-ghost btn-sm" onClick={handleEditMapping}>
-                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Изменить маппинг
-                      </button>
-                    )}
-                    {isLast && (
-                      <button className="btn btn-ghost btn-sm" onClick={handleClear} style={{ color: 'var(--neg)' }}>
-                        Сбросить
-                      </button>
-                    )}
+              {batches.map(b => (
+                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'var(--pos-tint, #edfaf3)', borderRadius: 10 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pos)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
                   </div>
-                );
-              })}
+                  <div style={{ flex: 1, fontSize: 13.5, fontFamily: 'var(--f-mono)' }}>
+                    {b.fileName}
+                    <span style={{ color: 'var(--ink-muted)', marginLeft: 8 }}>{b.count} строк</span>
+                  </div>
+                  {b.pending.headers.length > 0 && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleEditMapping(b.pending)}>
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Изменить маппинг
+                    </button>
+                  )}
+                  <button className="btn btn-ghost btn-sm" onClick={handleClear} style={{ color: 'var(--neg)' }}>
+                    Сбросить
+                  </button>
+                </div>
+              ))}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
