@@ -188,13 +188,15 @@ export default function DataUpload() {
         </div>
       </div>
 
-      {events.length > 0 && (
-        <>
-          <div className="sec-title">
-            <h2>Превью</h2>
-            <span className="sec-sub">первые 8 строк датасета</span>
-          </div>
-          <div className="card table-wrap" style={{ paddingBottom: 0 }}>
+      <div className="sec-title">
+        <h2>Превью</h2>
+        <span className="sec-sub">{events.length > 0 ? 'первые 8 строк датасета' : 'ожидается загрузка файла'}</span>
+      </div>
+      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
+        {events.length === 0 ? (
+          <div style={{ padding: 32, color: 'var(--ink-muted)', fontSize: 14 }}>После загрузки файла здесь отобразится датасет.</div>
+        ) : (
+          <>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line-soft)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span className="pill pill-pos">{new Intl.NumberFormat('ru-RU').format(events.length)} событий</span>
               <span className="pill pill-pos">{stats.totalCases} кейсов</span>
@@ -217,9 +219,9 @@ export default function DataUpload() {
                 </tbody>
               </table>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
