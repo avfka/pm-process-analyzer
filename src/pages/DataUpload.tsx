@@ -24,12 +24,24 @@ const PREVIEW_ROWS = [
   ['CASE-1028','Согласование roadmap',     '2026-04-12T16:00:00Z','PM-Mark','Notion',88],
 ];
 
+const DATA_SOURCES = [
+  { id: 'universal', label: 'Universal CSV', hint: 'готовый event log по схеме ниже' },
+  { id: 'jira', label: 'Jira', hint: 'задачи, статусы, исполнители' },
+  { id: 'youtrack', label: 'YouTrack', hint: 'issue export и spent time' },
+  { id: 'linear', label: 'Linear', hint: 'issues, assignees, updates' },
+  { id: 'notion', label: 'Notion', hint: 'таблицы, документы, статусы' },
+  { id: 'confluence', label: 'Confluence', hint: 'страницы, PRD, решения' },
+  { id: 'sheets', label: 'Google Sheets', hint: 'ручной журнал активностей' },
+];
+
 export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
   const [error, setError] = useState<string | null>(null);
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
   const [hasLoadedDataset, setHasLoadedDataset] = useState(false);
+  const [selectedSourceId, setSelectedSourceId] = useState('universal');
   const stats = analyzer.basicStats;
+  const selectedSource = DATA_SOURCES.find(source => source.id === selectedSourceId) ?? DATA_SOURCES[0];
   const shouldShowDataset = hasLoadedDataset && events.length > 0;
   const systemsCount = shouldShowDataset ? new Set(events.map(event => event.system)).size : 0;
   const previewRows = shouldShowDataset
@@ -73,13 +85,20 @@ export default function DataUpload() {
           setError(`Отсутствуют обязательные поля: ${missing.join(', ')}`);
           return;
         }
-        const parsedEvents: ProcessEvent[] = (results.data as any[]).map((row: any) => ({
+        const rows = results.data as any[];
+        const validDurations = rows
+          .map((row: any) => Number(row.duration))
+          .filter((duration: number) => Number.isFinite(duration) && duration > 0);
+        const avgDuration = validDurations.length > 0
+          ? Math.round(validDurations.reduce((sum: number, duration: number) => sum + duration, 0) / validDurations.length)
+          : 1;
+        const parsedEvents: ProcessEvent[] = rows.map((row: any) => ({
           case_id: row.case_id,
           activity: row.activity,
           timestamp: row.timestamp,
           actor: row.actor,
-          system: row.system,
-          duration: Number(row.duration) || 0,
+          system: row.system || selectedSource.label,
+          duration: Number(row.duration) || avgDuration,
         }));
         setEvents(parsedEvents);
         setIsDemoLoaded(false);
@@ -102,11 +121,36 @@ export default function DataUpload() {
         </div>
       </div>
 
-      <div className="card table-wrap" style={{ paddingBottom: 0 }}>
+      <div className="card card-pad">
+        <h3>Источник данных</h3>
+        <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, lineHeight: 1.55, marginTop: 4 }}>
+          Выберите систему, из которой получена выгрузка. Приложение будет приводить данные к единому формату event log для дальнейшего анализа.
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
+          {DATA_SOURCES.map(source => {
+            const active = source.id === selectedSourceId;
+            return (
+              <button
+                key={source.id}
+                className={'btn btn-sm ' + (active ? 'btn-primary' : '')}
+                onClick={() => setSelectedSourceId(source.id)}
+                type="button"
+              >
+                {source.label}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 12, color: 'var(--ink-muted)', fontSize: 12.5 }}>
+          Выбрано: <strong style={{ color: 'var(--ink-3)' }}>{selectedSource.label}</strong> · {selectedSource.hint}
+        </div>
+      </div>
+
+      <div className="card table-wrap" style={{ paddingBottom: 0, marginTop: 16 }}>
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
           <h3>Требования к CSV-файлу</h3>
           <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13, lineHeight: 1.5 }}>
-            Названия столбцов в CSV должны точно совпадать со значениями из колонки «Поле», а данные в каждом столбце должны соответствовать указанному типу.
+            Названия столбцов в CSV должны точно совпадать со значениями из колонки «Поле», а данные в каждом столбце должны соответствовать указанному типу. Чем больше событий и кейсов в файле, тем точнее аналитика. Пропущенные числовые значения будут заменены усреднёнными, если это возможно.
           </div>
         </div>
         <table className="t">
@@ -132,6 +176,9 @@ export default function DataUpload() {
       <div className="grid-2" style={{ marginTop: 16, alignItems: 'stretch' }}>
         <div className="card card-pad" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <h3>Импорт CSV</h3>
+          <div style={{ color: 'var(--ink-muted)', fontSize: 13, marginTop: 4 }}>
+            Источник: <strong style={{ color: 'var(--ink-3)' }}>{selectedSource.label}</strong>
+          </div>
 
           <div style={{ marginTop: 12, border: '2px dashed var(--line-strong)', borderRadius: 16, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center', background: 'var(--surface-2)', flex: 1 }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
