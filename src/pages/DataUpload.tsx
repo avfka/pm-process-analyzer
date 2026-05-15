@@ -24,31 +24,33 @@ const PREVIEW_ROWS = [
   ['CASE-1028','Согласование roadmap',     '2026-04-12T16:00:00Z','PM-Mark','Notion',88],
 ];
 
-type DatasetKind = 'none' | 'demo' | 'csv';
-
 export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
   const [error, setError] = useState<string | null>(null);
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
-  const [datasetKind, setDatasetKind] = useState<DatasetKind>(events.length > 0 ? 'csv' : 'none');
   const stats = analyzer.basicStats;
-  const datasetLabel = events.length === 0
-    ? 'Данные не загружены'
-    : datasetKind === 'demo'
-      ? 'Демо-набор данных'
-      : 'Пользовательский CSV';
+  const systemsCount = events.length > 0 ? new Set(events.map(event => event.system)).size : 0;
+  const previewRows = events.length > 0
+    ? events.slice(0, 8).map(event => [
+        event.case_id,
+        event.activity,
+        event.timestamp,
+        event.actor,
+        event.system,
+        event.duration,
+      ])
+    : PREVIEW_ROWS;
 
   const handleDemoLoad = () => {
+    if (isDemoLoaded) return;
     loadDemoData();
     setIsDemoLoaded(true);
-    setDatasetKind('demo');
     setError(null);
   };
 
   const handleClearData = () => {
     clearData();
     setIsDemoLoaded(false);
-    setDatasetKind('none');
     setError(null);
   };
 
@@ -77,7 +79,6 @@ export default function DataUpload() {
         }));
         setEvents(parsedEvents);
         setIsDemoLoaded(false);
-        setDatasetKind('csv');
         setError(null);
       },
       error: (err) => setError(`Ошибка парсинга CSV: ${err.message}`),
@@ -108,12 +109,9 @@ export default function DataUpload() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Upload */}
           <div className="card card-pad">
-            <h3>Импорт CSV</h3>
-            <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, marginTop: 4, lineHeight: 1.55 }}>
-              Файл должен содержать обязательные поля: <strong style={{ color: 'var(--ink-3)' }}>case_id, activity, timestamp, actor, system, duration</strong>.
-            </div>
-            <div style={{ color: 'var(--ink-muted)', fontSize: 13, marginTop: 6 }}>
-              После загрузки приложение проверит наличие этих полей и покажет статус в требованиях к CSV.
+          <h3>Импорт CSV</h3>
+          <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, marginTop: 4, lineHeight: 1.55 }}>
+              Файл должен содержать обязательные поля, указанные в требованиях к CSV. После загрузки приложение покажет первые 8 строк и статус распознавания в превью.
             </div>
 
             <div style={{ marginTop: 20, border: '2px dashed var(--line-strong)', borderRadius: 16, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', background: 'var(--surface-2)' }}>
@@ -151,81 +149,75 @@ export default function DataUpload() {
             <div style={{ color: 'var(--ink-3)', fontSize: 13.5, lineHeight: 1.55, marginTop: 6 }}>
               Загрузите демо-набор данных, чтобы посмотреть все разделы приложения на примере event log PM-команды.
             </div>
-            <button className="btn btn-primary btn-sm" onClick={handleDemoLoad} style={{ marginTop: 16 }}>
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
-              Загрузить демо-набор
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
+              <button className="btn btn-primary btn-sm" onClick={handleDemoLoad} disabled={isDemoLoaded}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
+                {isDemoLoaded ? 'Демо-данные загружены' : 'Загрузить демо-набор'}
+              </button>
+              {events.length > 0 && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
+              {events.length > 0 && <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>}
+            </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="card card-pad">
-          <h3>Текущий датасет</h3>
-          <div style={{ color: events.length > 0 ? 'var(--accent)' : 'var(--ink-muted)', fontSize: 13, marginTop: 4, fontWeight: 600 }}>{datasetLabel}</div>
-          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Row k="События"   v={events.length > 0 ? new Intl.NumberFormat('ru-RU').format(events.length) : '—'} />
-            <Row k="Кейсы"     v={events.length > 0 ? stats.totalCases : '—'} />
-            <Row k="Участники" v={events.length > 0 ? stats.totalActors : '—'} />
-            <Row k="Синхронизация" v={events.length > 0 ? 'только что' : '—'} />
+        <div className="card table-wrap" style={{ paddingBottom: 0 }}>
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)' }}>
+            <h3>Требования к CSV-файлу</h3>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>эти поля проверяются при загрузке</div>
           </div>
-          <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {events.length > 0 && <button className="btn btn-sm" onClick={handleClearData}>Сбросить</button>}
-            {isDemoLoaded && <Link href="/analysis"><a className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>К AS-IS →</a></Link>}
-          </div>
+          <table className="t">
+            <thead><tr>
+              <th>Поле</th>
+              <th>Тип</th>
+              <th>Описание</th>
+              <th>Пример</th>
+              <th style={{ textAlign: 'right' }}>Соответствие</th>
+            </tr></thead>
+            <tbody>
+              {SCHEMA.map(([f, t, d, ex]) => (
+                <tr key={f}>
+                  <td><span style={{ background: 'var(--accent-soft)', color: 'var(--accent-2)', padding: '3px 10px', borderRadius: 999, fontWeight: 600, fontSize: 13 }}>{f}</span></td>
+                  <td className="muted">{t}</td>
+                  <td>{d}</td>
+                  <td className="muted" style={{ fontFamily: 'var(--f-mono)', fontSize: 12.5 }}>{ex}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    {events.length > 0 ? (
+                      <span className="pill pill-pos">
+                        <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                      </span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Schema */}
       <div className="sec-title">
-        <h2>Требования к CSV-файлу</h2>
-        <span className="sec-sub">эти поля проверяются при загрузке</span>
+        <h2>Превью</h2>
+        <span className="sec-sub">{events.length > 0 ? 'первые 8 строк датасета' : 'ожидается загрузка файла'}</span>
       </div>
       <div className="card table-wrap" style={{ paddingBottom: 0 }}>
-        <table className="t">
-          <thead><tr>
-            <th>Поле</th>
-            <th>Тип</th>
-            <th>Описание</th>
-            <th>Пример</th>
-            <th style={{ textAlign: 'right' }}>Статус</th>
-          </tr></thead>
-          <tbody>
-            {SCHEMA.map(([f, t, d, ex]) => (
-              <tr key={f}>
-                <td><span style={{ background: 'var(--accent-soft)', color: 'var(--accent-2)', padding: '3px 10px', borderRadius: 999, fontWeight: 600, fontSize: 13 }}>{f}</span></td>
-                <td className="muted">{t}</td>
-                <td>{d}</td>
-                <td className="muted" style={{ fontFamily: 'var(--f-mono)', fontSize: 12.5 }}>{ex}</td>
-                <td style={{ textAlign: 'right' }}>
-                  {events.length > 0 ? (
-                    <span className="pill pill-pos">
-                      <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                    </span>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {isDemoLoaded && (
-        <>
-          {/* Preview */}
-          <div className="sec-title">
-            <h2>Превью</h2>
-            <span className="sec-sub">первые 8 строк демо-датасета</span>
-          </div>
-          <div className="card table-wrap" style={{ paddingBottom: 0 }}>
+        {events.length === 0 ? (
+          <div style={{ padding: 32, color: 'var(--ink-muted)', fontSize: 14 }}>Данные не загружены</div>
+        ) : (
+          <>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line-soft)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span className="pill pill-pos">{new Intl.NumberFormat('ru-RU').format(events.length)} событий</span>
+              <span className="pill pill-pos">{stats.totalCases} кейсов</span>
+              <span className="pill pill-pos">{stats.totalActors} участников</span>
+              <span className="pill">{systemsCount} систем</span>
+            </div>
             <div style={{ overflowX: 'auto' }}>
               <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
                 <thead><tr>
                   <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th><th style={{ textAlign: 'right' }}>duration</th>
                 </tr></thead>
                 <tbody>
-                  {PREVIEW_ROWS.map((r, i) => (
+                  {previewRows.map((r, i) => (
                     <tr key={i}>
                       {r.map((c, j) => (
                         <td key={j} style={{ textAlign: j === 5 ? 'right' : 'left', color: j === 0 ? 'var(--accent)' : j === 5 ? 'var(--ink)' : 'var(--ink-3)' }}>{String(c)}</td>
@@ -235,18 +227,9 @@ export default function DataUpload() {
                 </tbody>
               </table>
             </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 13.5 }}>
-      <span style={{ color: 'var(--ink-muted)' }}>{k}</span>
-      <span style={{ fontWeight: 600 }}>{v}</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
