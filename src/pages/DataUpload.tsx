@@ -158,6 +158,7 @@ export default function DataUpload() {
   const [stage, setStage] = useState<Stage>(events.length > 0 ? 'loaded' : 'idle');
   const [pending, setPending] = useState<PendingFile | null>(null);
   const [lastPending, setLastPending] = useState<PendingFile | null>(null);
+  const [fileQueue, setFileQueue] = useState<File[]>([]);
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,32 +168,37 @@ export default function DataUpload() {
   const stats = analyzer.basicStats;
   const systemsCount = new Set(events.map(e => e.system)).size;
 
-  /* ── File upload ────────────────────────────────────────── */
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
+  /* ── Parse one file ─────────────────────────────────────── */
+  const parseFile = (file: File, currentPlatformSystem: string) => {
     setError(null);
-
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
         const headers = results.meta.fields ?? [];
         if (!headers.length) { setError('Не удалось прочитать заголовки CSV.'); return; }
-        const detected = autoDetect(headers);
         const pf: PendingFile = {
           fileName: file.name,
           headers,
           rawRows: results.data as any[],
-          mapping: detected,
-          systemFallback: platform.system,
+          mapping: autoDetect(headers),
+          systemFallback: currentPlatformSystem,
         };
         setPending(pf);
         setStage('mapping');
       },
       error: (err) => setError(`Ошибка чтения: ${err.message}`),
     });
+  };
+
+  /* ── File upload ────────────────────────────────────────── */
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    e.target.value = '';
+    const [first, ...rest] = files;
+    setFileQueue(rest);
+    parseFile(first, platform.system);
   };
 
   /* ── Mapping ────────────────────────────────────────────── */
@@ -225,11 +231,18 @@ export default function DataUpload() {
 
     setEvents(stage === 'loaded' ? [...events, ...parsed] : parsed);
     setLastPending(pending);
-    setBatches(prev => [...(stage === 'loaded' ? prev : []), { id: `${fileName}-${Date.now()}`, fileName, count: parsed.length }]);
-    setPending(null);
+    setBatches(prev => [...(stage === 'loaded' || fileQueue.length > 0 ? prev : []), { id: `${fileName}-${Date.now()}`, fileName, count: parsed.length }]);
     setIsDemoLoaded(false);
-    setStage('loaded');
     setError(null);
+
+    if (fileQueue.length > 0) {
+      const [next, ...rest] = fileQueue;
+      setFileQueue(rest);
+      parseFile(next, platform.system);
+    } else {
+      setPending(null);
+      setStage('loaded');
+    }
   };
 
   const handleEditMapping = () => {
@@ -239,6 +252,7 @@ export default function DataUpload() {
   };
 
   const handleCancelMapping = () => {
+    setFileQueue([]);
     setPending(null);
     setError(null);
     setStage(events.length > 0 ? 'loaded' : 'idle');
@@ -303,10 +317,8 @@ export default function DataUpload() {
       {/* Platform selector — always visible */}
       <PlatformSelector selected={platformId} onChange={id => {
         setPlatformId(id);
-        if (stage === 'mapping') {
-          const p = PLATFORMS.find(x => x.id === id);
-          if (p) handleSystemFallback(p.system);
-        }
+        const p = PLATFORMS.find(x => x.id === id);
+        if (p) handleSystemFallback(p.system);
       }} />
 
       {/* ── IDLE ── */}
@@ -333,7 +345,14 @@ export default function DataUpload() {
               </svg>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{pending.fileName}</div>
+              <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {pending.fileName}
+                {fileQueue.length > 0 && (
+                  <span className="pill" style={{ fontSize: 11, background: 'var(--accent-tint)', color: 'var(--accent)' }}>
+                    ещё {fileQueue.length} в очереди
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 2 }}>
                 {pending.headers.length} колонок · {pending.rawRows.length} строк
                 · {Object.values(pending.mapping).filter(Boolean).length} из {FIELD_ORDER.length} определены автоматически
@@ -375,11 +394,14 @@ export default function DataUpload() {
                     <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 5 }}>{meta.desc}</div>
                   </div>
 
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {isSet && detected && <span className="pill pill-pos" style={{ fontSize: 11.5 }}>✓ автоопределено</span>}
                     {isSet && !detected && <span className="pill" style={{ fontSize: 11.5, background: 'var(--warn-tint)', color: 'var(--warn)' }}>вручную</span>}
                     {!isSet && isMissing && <span className="pill pill-neg" style={{ fontSize: 11.5 }}>обязательное</span>}
                     {!isSet && !isMissing && <span className="pill" style={{ fontSize: 11.5 }}>не выбрано</span>}
+                    {field === 'system' && !selected && platform.system && pending.systemFallback === platform.system && (
+                      <span className="pill" style={{ fontSize: 11, background: platform.bg, color: platform.color }}>← из платформы</span>
+                    )}
                   </div>
 
                   <div>
@@ -458,7 +480,7 @@ export default function DataUpload() {
                   <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6"/></svg>
                   Добавить ещё CSV
                 </span>
-                <input type="file" accept=".csv" onChange={handleFileSelect}
+                <input type="file" accept=".csv" multiple onChange={handleFileSelect}
                   style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
               </label>
             </div>
@@ -577,7 +599,7 @@ function UploadZone({ platform, onChange }: { platform: PlatformInfo; onChange: 
           <div style={{ fontSize: 17, fontWeight: 600 }}>Перетащите CSV сюда</div>
           <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, marginTop: 6 }}>или кликните для выбора файла</div>
         </div>
-        <input type="file" accept=".csv" onChange={onChange}
+        <input type="file" accept=".csv" multiple onChange={onChange}
           style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
       </label>
     </div>
