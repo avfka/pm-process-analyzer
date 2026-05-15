@@ -374,9 +374,11 @@ export default function DataUpload() {
           />
           <div className="grid-asym" style={{ alignItems: 'start', marginTop: 10 }}>
             <UploadZone platform={platform} onChange={handleFileSelect} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
-            </div>
+            {batches.length === 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
+              </div>
+            )}
           </div>
         </>
       )}
