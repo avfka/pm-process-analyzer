@@ -180,6 +180,14 @@ export default function DataUpload() {
 
   const rebuildEvents = (bs: ImportBatch[]) => bs.flatMap(b => b.events);
 
+  // If events exist in DataContext but batches is empty (stale localStorage), wipe everything
+  useEffect(() => {
+    if (events.length > 0 && batches.length === 0) {
+      clearData();
+      setStage('idle');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     try {
       if (batches.length > 0) {
@@ -539,33 +547,26 @@ export default function DataUpload() {
               ))}
             </div>
 
-            {/* К AS-IS nudge */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--accent-soft)', borderRadius: 10, marginBottom: 16 }}>
-              <span style={{ fontSize: 13.5, color: 'var(--accent-2)', fontWeight: 500 }}>Данные готовы — можно перейти к анализу</span>
-              <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS анализу →</a></Link>
-            </div>
+          </div>
 
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div className="sec-title" style={{ marginTop: 8 }}>
+            <h2>Превью данных</h2>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
               {[
                 ['События', new Intl.NumberFormat('ru-RU').format(events.length)],
                 ['Кейсы', stats.totalCases],
                 ['Участники', stats.totalActors],
                 ['Системы', systemsCount],
               ].map(([k, v]) => (
-                <span key={String(k)} className="pill" style={{ fontSize: 12.5, padding: '4px 10px' }}>
-                  <span style={{ color: 'var(--ink-muted)', marginRight: 5 }}>{k}</span>
+                <span key={String(k)} className="pill" style={{ fontSize: 12, padding: '3px 9px' }}>
+                  <span style={{ color: 'var(--ink-muted)', marginRight: 4 }}>{k}</span>
                   <span style={{ fontWeight: 700, color: 'var(--ink)' }}>{v}</span>
                 </span>
               ))}
             </div>
-          </div>
-
-          <div className="sec-title" style={{ marginTop: 8 }}>
-            <h2>Превью данных</h2>
-            <span className="sec-sub">{new Intl.NumberFormat('ru-RU').format(events.length)} строк из всех файлов</span>
             <button className="btn btn-sm" onClick={handleExport} style={{ marginLeft: 'auto' }}>
               <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6" transform="rotate(180 12 12)"/></svg>
-              Скачать объединённый CSV
+              Скачать CSV
             </button>
           </div>
           <PreviewTable events={events} />
