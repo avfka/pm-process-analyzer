@@ -518,7 +518,7 @@ export default function DataUpload() {
         <div ref={batchesRef} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
           <div className="card card-pad">
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-              Импорт CSV
+              Загруженные файлы
             </div>
             {/* Batch list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
