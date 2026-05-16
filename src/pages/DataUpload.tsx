@@ -389,12 +389,7 @@ export default function DataUpload() {
       {/* ── STEP 2: upload — shown in idle and loaded ── */}
       {stage !== 'mapping' && (
         <>
-          {stage === 'loaded' ? (
-            <div style={{ marginTop: 20, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 14, color: 'var(--ink-muted)' }}>Хотите добавить данные из другой платформы?</span>
-              <span style={{ fontSize: 13, color: 'var(--ink-faint)' }}>— выберите платформу выше и загрузите ещё один файл</span>
-            </div>
-          ) : (
+          {stage === 'idle' && (
             <StepLabel
               n={2}
               title="Загрузите CSV-файл"
@@ -408,7 +403,7 @@ export default function DataUpload() {
               <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
             </div>
           ) : (
-            <div style={{ marginTop: 10 }}>
+            <div style={{ marginTop: 16 }}>
               <UploadZone platform={platform} onChange={handleFileSelect} fullWidth />
             </div>
           )}
