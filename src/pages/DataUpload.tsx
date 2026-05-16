@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '@/context/DataContext';
 import { Link } from 'wouter';
 import Papa from 'papaparse';
@@ -173,6 +173,7 @@ export default function DataUpload() {
   const [isDemoLoaded, setIsDemoLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [platformId, setPlatformId] = useState('universal');
+  const batchesRef = useRef<HTMLDivElement>(null);
 
   const platform = PLATFORMS.find(p => p.id === platformId) ?? PLATFORMS[0];
   const stats = analyzer.basicStats;
@@ -277,6 +278,7 @@ export default function DataUpload() {
       setPending(null);
       setStage('loaded');
       setError(null);
+      setTimeout(() => batchesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
       return;
     }
 
@@ -294,6 +296,7 @@ export default function DataUpload() {
     } else {
       setPending(null);
       setStage('loaded');
+      setTimeout(() => batchesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
   };
 
@@ -511,7 +514,7 @@ export default function DataUpload() {
 
       {/* ── LOADED ── */}
       {stage === 'loaded' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
+        <div ref={batchesRef} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
           <div className="card card-pad">
             {/* Batch list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
