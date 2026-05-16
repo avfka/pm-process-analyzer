@@ -368,23 +368,15 @@ export default function DataUpload() {
       </div>
 
       {/* Platform selector — global in idle/loaded, per-file in mapping */}
-      <StepLabel n={1} title="Выберите платформу" subtitle="Шаги экспорта и нужные колонки обновятся автоматически" />
-      <PlatformSelector
-        selected={stage === 'mapping' && pending ? pending.platformId : platformId}
-        onChange={id => {
-          if (stage === 'mapping') {
-            const p = PLATFORMS.find(x => x.id === id);
-            setPending(pf => pf ? {
-              ...pf,
-              platformId: id,
-              systemFallback: p?.system ?? '',
-              mapping: autoDetect(pf.headers),
-            } : pf);
-          } else {
-            setPlatformId(id);
-          }
-        }}
-      />
+      {stage !== 'mapping' && (
+        <>
+          <StepLabel n={1} title="Выберите платформу" subtitle="Шаги экспорта и нужные колонки обновятся автоматически" />
+          <PlatformSelector
+            selected={platformId}
+            onChange={id => setPlatformId(id)}
+          />
+        </>
+      )}
 
       {/* ── STEP 2: upload — shown in idle and loaded ── */}
       {stage !== 'mapping' && (
