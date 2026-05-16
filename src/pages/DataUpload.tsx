@@ -555,6 +555,17 @@ export default function DataUpload() {
               ))}
             </div>
 
+            {/* CTA row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid var(--line-soft)' }}>
+              <div style={{ fontSize: 13.5, color: 'var(--ink-muted)' }}>
+                Есть данные из другой платформы?
+                <span style={{ color: 'var(--ink-faint)', marginLeft: 6, fontSize: 12.5 }}>Загрузите ещё — анализ объединит всё вместе</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS анализу →</a></Link>
+              </div>
+            </div>
+
           </div>
 
           <div className="sec-title" style={{ marginTop: 8 }}>
