@@ -389,12 +389,19 @@ export default function DataUpload() {
       {/* ── STEP 2: upload — shown in idle and loaded ── */}
       {stage !== 'mapping' && (
         <>
-          <StepLabel
-            n={2}
-            title={stage === 'loaded' ? 'Добавить файл из другой платформы' : 'Загрузите CSV-файл'}
-            subtitle={stage === 'loaded' ? 'Выберите платформу выше, затем загрузите следующий файл' : 'Можно выбрать несколько файлов сразу — каждый пройдёт через маппер'}
-            style={{ marginTop: 20 }}
-          />
+          {stage === 'loaded' ? (
+            <div style={{ marginTop: 20, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14, color: 'var(--ink-muted)' }}>Хотите добавить данные из другой платформы?</span>
+              <span style={{ fontSize: 13, color: 'var(--ink-faint)' }}>— выберите платформу выше и загрузите ещё один файл</span>
+            </div>
+          ) : (
+            <StepLabel
+              n={2}
+              title="Загрузите CSV-файл"
+              subtitle="Можно выбрать несколько файлов сразу — каждый пройдёт через маппер"
+              style={{ marginTop: 20 }}
+            />
+          )}
           {batches.length === 0 ? (
             <div className="grid-asym" style={{ alignItems: 'stretch', marginTop: 10 }}>
               <UploadZone platform={platform} onChange={handleFileSelect} />
