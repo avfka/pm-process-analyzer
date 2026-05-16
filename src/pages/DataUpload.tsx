@@ -479,7 +479,20 @@ export default function DataUpload() {
                   </div>
 
                   <div>
-                    {field === 'system' ? (
+                    {field === 'system' && pending.platformId === 'universal' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <select value={selected} onChange={e => handleMappingChange(field, e.target.value)}
+                          style={selectStyle(isSet ? 'var(--pos)' : 'var(--line-strong)')}>
+                          <option value="">— колонка не выбрана —</option>
+                          {pending.headers.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <input
+                          placeholder={selected ? 'значение если пусто (опц.)' : 'значение по умолчанию (опц.)'}
+                          value={pending.systemFallback}
+                          onChange={e => handleSystemFallback(e.target.value)}
+                          style={{ width: '100%', height: 30, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-soft)', background: 'var(--surface)', fontSize: 12, boxSizing: 'border-box', color: 'var(--ink-muted)' }} />
+                      </div>
+                    ) : field === 'system' ? (
                       <input placeholder={(PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0]).system || 'Jira, Slack…'} value={pending.systemFallback}
                         onChange={e => handleSystemFallback(e.target.value)}
                         style={{ width: '100%', height: 34, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-strong)', background: 'var(--surface)', fontSize: 13, boxSizing: 'border-box' }} />
