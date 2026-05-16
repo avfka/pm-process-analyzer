@@ -362,12 +362,14 @@ export default function DataUpload() {
   return (
     <div>
       {/* Header */}
-      <div style={{ padding: '16px 0 28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
+      <div style={{ padding: stage === 'mapping' ? '10px 0 14px' : '16px 0 20px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
         <div>
           <h1>Данные</h1>
-          <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 580, fontSize: 15, lineHeight: 1.55 }}>
-            Загрузите CSV из любого источника. Выберите платформу — маппер предложит правильное сопоставление колонок.
-          </div>
+          {stage !== 'mapping' && (
+            <div style={{ marginTop: 10, color: 'var(--ink-muted)', maxWidth: 580, fontSize: 15, lineHeight: 1.55 }}>
+              Загрузите CSV из любого источника. Выберите платформу — маппер предложит правильное сопоставление колонок.
+            </div>
+          )}
         </div>
       </div>
 
@@ -406,10 +408,10 @@ export default function DataUpload() {
 
       {/* ── MAPPING ── */}
       {stage === 'mapping' && pending && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
           {/* File banner */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px', background: 'var(--accent-soft)', borderRadius: 14, border: '1px solid var(--accent-tint)' }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: 'var(--accent-soft)', borderRadius: 12, border: '1px solid var(--accent-tint)' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
               </svg>
@@ -434,9 +436,9 @@ export default function DataUpload() {
 
           {/* Mapper */}
           <div className="card">
-            <div style={{ padding: '18px 24px 14px', borderBottom: '1px solid var(--line-soft)' }}>
+            <div style={{ padding: '12px 24px 10px', borderBottom: '1px solid var(--line-soft)' }}>
               <h3>Сопоставление колонок</h3>
-              <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 4 }}>
+              <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 2 }}>
                 Зелёные поля определены автоматически. Остальные — выберите из дропдауна.
               </div>
             </div>
@@ -451,7 +453,7 @@ export default function DataUpload() {
               return (
                 <div key={field} style={{
                   display: 'grid', gridTemplateColumns: '200px 1fr 280px',
-                  gap: 16, alignItems: 'center', padding: '13px 24px',
+                  gap: 16, alignItems: 'center', padding: '8px 24px',
                   borderBottom: '1px solid var(--line-soft)',
                   background: isMissing ? '#fff5f5' : !meta.required ? 'var(--bg)' : undefined,
                   opacity: !meta.required ? 0.75 : 1,
@@ -513,13 +515,12 @@ export default function DataUpload() {
               <div style={{ margin: '0 24px 12px', padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>
             )}
 
-            <div style={{ padding: '14px 24px', display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ padding: '10px 24px', display: 'flex', gap: 10, alignItems: 'center' }}>
               <button className="btn btn-primary" onClick={handleApplyMapping}>
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
                 Применить и загрузить
               </button>
               <button className="btn" onClick={handleCancelMapping}>Отмена</button>
-              <span style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginLeft: 4 }}>{pending.rawRows.length} строк</span>
             </div>
           </div>
 
