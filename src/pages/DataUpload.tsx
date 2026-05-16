@@ -621,7 +621,7 @@ function StepLabel({ n, title, subtitle, style }: { n: number; title: string; su
 }
 
 /* ── Preview table with pagination ───────────────────────── */
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 function PreviewTable({ events }: { events: ProcessEvent[] }) {
   const [page, setPage] = useState(0);
