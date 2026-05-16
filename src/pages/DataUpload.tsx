@@ -426,7 +426,6 @@ export default function DataUpload() {
                 · {Object.values(pending.mapping).filter(Boolean).length} из {FIELD_ORDER.length} определены автоматически
               </div>
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={handleCancelMapping}>Отмена</button>
           </div>
 
           {/* Mapper */}
