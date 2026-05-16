@@ -365,9 +365,6 @@ export default function DataUpload() {
             Загрузите CSV из любого источника. Выберите платформу — маппер предложит правильное сопоставление колонок.
           </div>
         </div>
-        {stage === 'loaded' && (
-          <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS →</a></Link>
-        )}
       </div>
 
       {/* Platform selector — global in idle/loaded, per-file in mapping */}
@@ -398,12 +395,16 @@ export default function DataUpload() {
             subtitle={stage === 'loaded' ? 'Выберите платформу выше, затем загрузите следующий файл' : 'Можно выбрать несколько файлов сразу — каждый пройдёт через маппер'}
             style={{ marginTop: 20 }}
           />
-          <div className="grid-asym" style={{ alignItems: 'stretch', marginTop: 10 }}>
-            <UploadZone platform={platform} onChange={handleFileSelect} />
-            {batches.length === 0 && (
+          {batches.length === 0 ? (
+            <div className="grid-asym" style={{ alignItems: 'stretch', marginTop: 10 }}>
+              <UploadZone platform={platform} onChange={handleFileSelect} />
               <DemoCard onLoad={handleDemoLoad} loaded={isDemoLoaded} />
-            )}
-          </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: 10 }}>
+              <UploadZone platform={platform} onChange={handleFileSelect} fullWidth />
+            </div>
+          )}
         </>
       )}
 
@@ -519,7 +520,7 @@ export default function DataUpload() {
 
       {/* ── LOADED ── */}
       {stage === 'loaded' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
           <div className="card card-pad">
             {/* Batch list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -686,9 +687,9 @@ function PlatformSelector({ selected, onChange }: { selected: string; onChange: 
 }
 
 /* ── Upload zone ──────────────────────────────────────────── */
-function UploadZone({ platform, onChange }: { platform: PlatformInfo; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+function UploadZone({ platform, onChange, fullWidth }: { platform: PlatformInfo; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; fullWidth?: boolean }) {
   return (
-    <div className="card card-pad">
+    <div className="card card-pad" style={fullWidth ? { width: '100%' } : undefined}>
       <h3>Импорт CSV</h3>
       <div style={{ color: 'var(--ink-muted)', fontSize: 13.5, marginTop: 4, marginBottom: 20 }}>
         После загрузки откроется маппер — сопоставите колонки вашего файла с нужными полями.
