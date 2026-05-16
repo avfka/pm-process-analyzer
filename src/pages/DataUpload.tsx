@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useData } from '@/context/DataContext';
 import { Link } from 'wouter';
 import Papa from 'papaparse';
@@ -134,9 +134,18 @@ function autoDetect(headers: string[]): Record<string, string> {
   return mapping;
 }
 
-/* ── Types ────────────────────────────────────────────────── */
-type Stage = 'idle' | 'mapping' | 'loaded';
+/* ── Module-level helpers ─────────────────────────────────── */
+const RU_FMT = new Intl.NumberFormat('ru-RU');
 
+function getPlatform(id: string): PlatformInfo {
+  return PLATFORMS.find(p => p.id === id) ?? PLATFORMS[0];
+}
+
+function rebuildEvents(bs: ImportBatch[]): ProcessEvent[] {
+  return bs.flatMap(b => b.events);
+}
+
+/* ── Types ────────────────────────────────────────────────── */
 interface PendingFile {
   fileName: string;
   headers: string[];
@@ -160,7 +169,6 @@ const BATCHES_KEY = 'pm-analyzer-batches';
 export default function DataUpload() {
   const { events, setEvents, loadDemoData, clearData, analyzer } = useData();
 
-  const [stage, setStage] = useState<Stage>(events.length > 0 ? 'loaded' : 'idle');
   const [pending, setPending] = useState<PendingFile | null>(null);
   const [editingBatchId, setEditingBatchId] = useState<string | null>(null);
   const [fileQueue, setFileQueue] = useState<File[]>([]);
@@ -170,23 +178,20 @@ export default function DataUpload() {
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
-  const [isDemoLoaded, setIsDemoLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [platformId, setPlatformId] = useState('universal');
   const batchesRef = useRef<HTMLDivElement>(null);
-  const uploadRef = useRef<HTMLDivElement>(null);
 
-  const platform = PLATFORMS.find(p => p.id === platformId) ?? PLATFORMS[0];
+  const stage = pending !== null ? 'mapping' : batches.length > 0 ? 'loaded' : 'idle';
+  const isDemoLoaded = batches.some(b => b.id === 'demo');
+  const platform = getPlatform(platformId);
   const stats = analyzer.basicStats;
-  const systemsCount = new Set(events.map(e => e.system)).size;
-
-  const rebuildEvents = (bs: ImportBatch[]) => bs.flatMap(b => b.events);
+  const systemsCount = useMemo(() => new Set(events.map(e => e.system)).size, [events]);
 
   // If events exist in DataContext but batches is empty (stale localStorage), wipe everything
   useEffect(() => {
     if (events.length > 0 && batches.length === 0) {
       clearData();
-      setStage('idle');
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -204,23 +209,21 @@ export default function DataUpload() {
   /* ── Parse one file ─────────────────────────────────────── */
   const parseFile = (file: File, filePlatformId: string) => {
     setError(null);
-    const filePlatform = PLATFORMS.find(p => p.id === filePlatformId) ?? PLATFORMS[0];
+    const filePlatform = getPlatform(filePlatformId);
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
         const headers = results.meta.fields ?? [];
         if (!headers.length) { setError('Не удалось прочитать заголовки CSV.'); return; }
-        const pf: PendingFile = {
+        setPending({
           fileName: file.name,
           headers,
           rawRows: results.data as any[],
           mapping: autoDetect(headers),
           systemFallback: filePlatform.system,
           platformId: filePlatformId,
-        };
-        setPending(pf);
-        setStage('mapping');
+        });
       },
       error: (err) => setError(`Ошибка чтения: ${err.message}`),
     });
@@ -261,50 +264,45 @@ export default function DataUpload() {
     return parsed;
   };
 
+  const commitBatches = (newBatches: ImportBatch[]) => {
+    setBatches(newBatches);
+    setEvents(rebuildEvents(newBatches));
+    setPending(null);
+    setError(null);
+    setTimeout(() => batchesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
+
   const handleApplyMapping = () => {
     if (!pending) return;
     const parsed = parsePending(pending);
     if (!parsed) return;
 
-    let newBatches: ImportBatch[];
     if (editingBatchId) {
-      newBatches = batches.map(b =>
-        b.id === editingBatchId
-          ? { ...b, count: parsed.length, pending, events: parsed }
-          : b
-      );
       setEditingBatchId(null);
-      setBatches(newBatches);
-      setEvents(rebuildEvents(newBatches));
-      setPending(null);
-      setStage('loaded');
-      setError(null);
-      setTimeout(() => batchesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      commitBatches(batches.map(b =>
+        b.id === editingBatchId ? { ...b, count: parsed.length, pending, events: parsed } : b
+      ));
       return;
     }
 
     const newBatch: ImportBatch = { id: `${pending.fileName}-${Date.now()}`, fileName: pending.fileName, count: parsed.length, pending, events: parsed };
-    newBatches = batches.length > 0 || fileQueue.length > 0 ? [...batches, newBatch] : [newBatch];
-    setBatches(newBatches);
-    setEvents(rebuildEvents(newBatches));
-    setIsDemoLoaded(false);
-    setError(null);
+    const newBatches = batches.length > 0 || fileQueue.length > 0 ? [...batches, newBatch] : [newBatch];
 
     if (fileQueue.length > 0) {
       const [next, ...rest] = fileQueue;
       setFileQueue(rest);
+      setBatches(newBatches);
+      setEvents(rebuildEvents(newBatches));
+      setError(null);
       parseFile(next, 'universal');
     } else {
-      setPending(null);
-      setStage('loaded');
-      setTimeout(() => batchesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      commitBatches(newBatches);
     }
   };
 
   const handleEditMapping = (batch: ImportBatch) => {
     setEditingBatchId(batch.id);
     setPending({ ...batch.pending, mapping: autoDetect(batch.pending.headers) });
-    setStage('mapping');
   };
 
   const handleRemoveBatch = (batchId: string) => {
@@ -312,8 +310,6 @@ export default function DataUpload() {
     setBatches(newBatches);
     if (newBatches.length === 0) {
       clearData();
-      setIsDemoLoaded(false);
-      setStage('idle');
     } else {
       setEvents(rebuildEvents(newBatches));
     }
@@ -324,15 +320,12 @@ export default function DataUpload() {
     setPending(null);
     setEditingBatchId(null);
     setError(null);
-    setStage(events.length > 0 ? 'loaded' : 'idle');
   };
 
   /* ── Demo / clear ───────────────────────────────────────── */
   const handleDemoLoad = () => {
     if (isDemoLoaded) return;
     loadDemoData();
-    setIsDemoLoaded(true);
-    setStage('loaded');
     const demoBatch: ImportBatch = { id: 'demo', fileName: 'demo-event-log.csv', count: DEMO_DATA.length, events: DEMO_DATA, pending: { fileName: 'demo-event-log.csv', headers: [], rawRows: [], mapping: {}, systemFallback: '', platformId: 'universal' } };
     setBatches([demoBatch]);
     setPending(null);
@@ -341,8 +334,6 @@ export default function DataUpload() {
 
   const handleClear = () => {
     clearData();
-    setIsDemoLoaded(false);
-    setStage('idle');
     setPending(null);
     setEditingBatchId(null);
     setBatches([]);
@@ -352,10 +343,12 @@ export default function DataUpload() {
   const handleExport = () => {
     if (!events.length) return;
     const csv = Papa.unparse(events.map(e => ({ case_id: e.case_id, activity: e.activity, timestamp: e.timestamp, actor: e.actor, system: e.system, duration: e.duration })));
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.href = url;
     a.download = 'combined-event-log.csv';
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   /* ── Render ───────────────────────────────────────────────  */
@@ -377,16 +370,13 @@ export default function DataUpload() {
       {stage !== 'mapping' && (
         <>
           <StepLabel n={1} title="Выберите платформу" subtitle="Шаги экспорта и нужные колонки обновятся автоматически" />
-          <PlatformSelector
-            selected={platformId}
-            onChange={id => setPlatformId(id)}
-          />
+          <PlatformSelector selected={platformId} onChange={setPlatformId} />
         </>
       )}
 
       {/* ── STEP 2: upload — shown in idle and loaded ── */}
       {stage !== 'mapping' && (
-        <div ref={uploadRef}>
+        <div>
           <StepLabel
             n={2}
             title="Загрузите CSV-файл"
@@ -407,132 +397,130 @@ export default function DataUpload() {
       )}
 
       {/* ── MAPPING ── */}
-      {stage === 'mapping' && pending && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
-          {/* File banner */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: 'var(--accent-soft)', borderRadius: 12, border: '1px solid var(--accent-tint)' }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
-              </svg>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                {editingBatchId
-                  ? <><span style={{ color: 'var(--ink-muted)', fontWeight: 400 }}>Редактирование:</span> {pending.fileName}</>
-                  : pending.fileName}
-                {fileQueue.length > 0 && (
-                  <span className="pill" style={{ fontSize: 11, background: 'var(--accent-tint)', color: 'var(--accent)' }}>
-                    ещё {fileQueue.length} в очереди
-                  </span>
-                )}
+      {stage === 'mapping' && pending && (() => {
+        const fp = getPlatform(pending.platformId);
+        const detectedMapping = autoDetect(pending.headers);
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+            {/* File banner */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: 'var(--accent-soft)', borderRadius: 12, border: '1px solid var(--accent-tint)' }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--accent-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
+                </svg>
               </div>
-              <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 2 }}>
-                {pending.headers.length} колонок · {pending.rawRows.length} строк
-                · {Object.values(pending.mapping).filter(Boolean).length} из {FIELD_ORDER.length} определены автоматически
-              </div>
-            </div>
-          </div>
-
-          {/* Mapper */}
-          <div className="card">
-            <div style={{ padding: '12px 24px 10px', borderBottom: '1px solid var(--line-soft)' }}>
-              <h3>Сопоставление колонок</h3>
-              <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 2 }}>
-                Зелёные поля определены автоматически. Остальные — выберите из дропдауна.
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {editingBatchId
+                    ? <><span style={{ color: 'var(--ink-muted)', fontWeight: 400 }}>Редактирование:</span> {pending.fileName}</>
+                    : pending.fileName}
+                  {fileQueue.length > 0 && (
+                    <span className="pill" style={{ fontSize: 11, background: 'var(--accent-tint)', color: 'var(--accent)' }}>
+                      ещё {fileQueue.length} в очереди
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 2 }}>
+                  {pending.headers.length} колонок · {pending.rawRows.length} строк
+                  · {Object.values(pending.mapping).filter(Boolean).length} из {FIELD_ORDER.length} определены автоматически
+                </div>
               </div>
             </div>
 
-            {FIELD_ORDER.map(field => {
-              const meta = FIELD_META[field];
-              const selected = pending.mapping[field] ?? '';
-              const detected = Boolean(autoDetect(pending.headers)[field]);
-              const isSet = Boolean(selected);
-              const isMissing = meta.required && !isSet;
+            {/* Mapper */}
+            <div className="card">
+              <div style={{ padding: '12px 24px 10px', borderBottom: '1px solid var(--line-soft)' }}>
+                <h3>Сопоставление колонок</h3>
+                <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 2 }}>
+                  Зелёные поля определены автоматически. Остальные — выберите из дропдауна.
+                </div>
+              </div>
 
-              return (
-                <div key={field} style={{
-                  display: 'grid', gridTemplateColumns: '200px 1fr 280px',
-                  gap: 16, alignItems: 'center', padding: '8px 24px',
-                  borderBottom: '1px solid var(--line-soft)',
-                  background: isMissing ? '#fff5f5' : !meta.required ? 'var(--bg)' : undefined,
-                  opacity: !meta.required ? 0.75 : 1,
-                }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ background: isSet ? 'var(--accent-soft)' : isMissing ? 'var(--neg-tint)' : 'var(--bg)', color: isSet ? 'var(--accent-2)' : isMissing ? 'var(--neg)' : 'var(--ink-muted)', padding: '2px 10px', borderRadius: 999, fontWeight: 700, fontSize: 12.5, fontFamily: 'var(--f-mono)' }}>
-                        {meta.label}
-                      </span>
-                      {!meta.required && <span className="pill" style={{ fontSize: 11 }}>необязательное</span>}
+              {FIELD_ORDER.map(field => {
+                const meta = FIELD_META[field];
+                const selected = pending.mapping[field] ?? '';
+                const detected = Boolean(detectedMapping[field]);
+                const isSet = Boolean(selected);
+                const isMissing = meta.required && !isSet;
+
+                return (
+                  <div key={field} style={{
+                    display: 'grid', gridTemplateColumns: '200px 1fr 280px',
+                    gap: 16, alignItems: 'center', padding: '8px 24px',
+                    borderBottom: '1px solid var(--line-soft)',
+                    background: isMissing ? '#fff5f5' : !meta.required ? 'var(--bg)' : undefined,
+                    opacity: !meta.required ? 0.75 : 1,
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ background: isSet ? 'var(--accent-soft)' : isMissing ? 'var(--neg-tint)' : 'var(--bg)', color: isSet ? 'var(--accent-2)' : isMissing ? 'var(--neg)' : 'var(--ink-muted)', padding: '2px 10px', borderRadius: 999, fontWeight: 700, fontSize: 12.5, fontFamily: 'var(--f-mono)' }}>
+                          {meta.label}
+                        </span>
+                        {!meta.required && <span className="pill" style={{ fontSize: 11 }}>необязательное</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 5 }}>{meta.desc}</div>
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 5 }}>{meta.desc}</div>
-                  </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {isSet && detected && <span className="pill pill-pos" style={{ fontSize: 11.5 }}>✓ автоопределено</span>}
-                    {isSet && !detected && <span className="pill" style={{ fontSize: 11.5, background: 'var(--warn-tint)', color: 'var(--warn)' }}>вручную</span>}
-                    {!isSet && isMissing && <span className="pill pill-neg" style={{ fontSize: 11.5 }}>обязательное</span>}
-                    {field === 'system' && !selected && (() => {
-                      const fp = PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0];
-                      return fp.system && pending.systemFallback === fp.system
-                        ? <span className="pill" style={{ fontSize: 11, background: fp.bg, color: fp.color }}>← из платформы</span>
-                        : null;
-                    })()}
-                  </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {isSet && detected && <span className="pill pill-pos" style={{ fontSize: 11.5 }}>✓ автоопределено</span>}
+                      {isSet && !detected && <span className="pill" style={{ fontSize: 11.5, background: 'var(--warn-tint)', color: 'var(--warn)' }}>вручную</span>}
+                      {!isSet && isMissing && <span className="pill pill-neg" style={{ fontSize: 11.5 }}>обязательное</span>}
+                      {field === 'system' && !selected && fp.system && pending.systemFallback === fp.system && (
+                        <span className="pill" style={{ fontSize: 11, background: fp.bg, color: fp.color }}>← из платформы</span>
+                      )}
+                    </div>
 
-                  <div>
-                    {field === 'system' && pending.platformId === 'universal' ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div>
+                      {field === 'system' && pending.platformId === 'universal' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <select value={selected} onChange={e => handleMappingChange(field, e.target.value)}
+                            style={selectStyle(isSet ? 'var(--pos)' : 'var(--line-strong)')}>
+                            <option value="">— колонка не выбрана —</option>
+                            {pending.headers.map(h => <option key={h} value={h}>{h}</option>)}
+                          </select>
+                          <input
+                            placeholder={selected ? 'значение если пусто (опц.)' : 'значение по умолчанию (опц.)'}
+                            value={pending.systemFallback}
+                            onChange={e => handleSystemFallback(e.target.value)}
+                            style={{ width: '100%', height: 30, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-soft)', background: 'var(--surface)', fontSize: 12, boxSizing: 'border-box', color: 'var(--ink-muted)' }} />
+                        </div>
+                      ) : field === 'system' ? (
+                        <input placeholder={fp.system || 'Jira, Slack…'} value={pending.systemFallback}
+                          onChange={e => handleSystemFallback(e.target.value)}
+                          style={{ width: '100%', height: 34, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-strong)', background: 'var(--surface)', fontSize: 13, boxSizing: 'border-box' }} />
+                      ) : (
                         <select value={selected} onChange={e => handleMappingChange(field, e.target.value)}
-                          style={selectStyle(isSet ? 'var(--pos)' : 'var(--line-strong)')}>
-                          <option value="">— колонка не выбрана —</option>
+                          style={selectStyle(isSet ? 'var(--pos)' : isMissing ? 'var(--neg)' : 'var(--line-strong)')}>
+                          <option value="">— не выбрано —</option>
                           {pending.headers.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
-                        <input
-                          placeholder={selected ? 'значение если пусто (опц.)' : 'значение по умолчанию (опц.)'}
-                          value={pending.systemFallback}
-                          onChange={e => handleSystemFallback(e.target.value)}
-                          style={{ width: '100%', height: 30, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-soft)', background: 'var(--surface)', fontSize: 12, boxSizing: 'border-box', color: 'var(--ink-muted)' }} />
-                      </div>
-                    ) : field === 'system' ? (
-                      <input placeholder={(PLATFORMS.find(x => x.id === pending.platformId) ?? PLATFORMS[0]).system || 'Jira, Slack…'} value={pending.systemFallback}
-                        onChange={e => handleSystemFallback(e.target.value)}
-                        style={{ width: '100%', height: 34, padding: '0 10px', borderRadius: 8, border: '1.5px solid var(--line-strong)', background: 'var(--surface)', fontSize: 13, boxSizing: 'border-box' }} />
-                    ) : (
-                      <select value={selected} onChange={e => handleMappingChange(field, e.target.value)}
-                        style={selectStyle(isSet ? 'var(--pos)' : isMissing ? 'var(--neg)' : 'var(--line-strong)')}>
-                        <option value="">— не выбрано —</option>
-                        {pending.headers.map(h => <option key={h} value={h}>{h}</option>)}
-                      </select>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
+              {error && (
+                <div style={{ margin: '0 24px 12px', padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>
+              )}
 
-            {error && (
-              <div style={{ margin: '0 24px 12px', padding: '10px 14px', background: 'var(--neg-tint)', color: 'var(--neg)', borderRadius: 10, fontSize: 13.5 }}>{error}</div>
-            )}
-
-            <div style={{ padding: '10px 24px', display: 'flex', gap: 10, alignItems: 'center' }}>
-              <button className="btn btn-primary" onClick={handleApplyMapping}>
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-                Применить и загрузить
-              </button>
-              <button className="btn" onClick={handleCancelMapping}>Отмена</button>
+              <div style={{ padding: '10px 24px', display: 'flex', gap: 10, alignItems: 'center' }}>
+                <button className="btn btn-primary" onClick={handleApplyMapping}>
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                  Применить и загрузить
+                </button>
+                <button className="btn" onClick={handleCancelMapping}>Отмена</button>
+              </div>
             </div>
           </div>
-
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── LOADED ── */}
       {stage === 'loaded' && (
         <div ref={batchesRef} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
           <div className="card card-pad">
             <h3 style={{ marginBottom: 10 }}>Загруженные файлы</h3>
-            {/* Batch list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
               {batches.map(b => (
                 <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'var(--pos-tint, #edfaf3)', borderRadius: 10 }}>
@@ -572,14 +560,13 @@ export default function DataUpload() {
               </button>
               <span style={{ color: 'var(--ink-faint)', marginLeft: 8, fontSize: 12.5 }}>— анализ объединит всё вместе</span>
             </div>
-
           </div>
 
           <div className="sec-title" style={{ marginTop: 8 }}>
             <h2>Превью данных</h2>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
               {[
-                ['События', new Intl.NumberFormat('ru-RU').format(events.length)],
+                ['События', RU_FMT.format(events.length)],
                 ['Кейсы', stats.totalCases],
                 ['Участники', stats.totalActors],
                 ['Системы', systemsCount],
@@ -596,7 +583,6 @@ export default function DataUpload() {
             </button>
           </div>
           <PreviewTable events={events} />
-
         </div>
       )}
     </div>
@@ -655,7 +641,7 @@ function PreviewTable({ events }: { events: ProcessEvent[] }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderTop: '1px solid var(--line-soft)' }}>
         <span style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
-          {new Intl.NumberFormat('ru-RU').format(from)}–{new Intl.NumberFormat('ru-RU').format(to)} из {new Intl.NumberFormat('ru-RU').format(total)}
+          {RU_FMT.format(from)}–{RU_FMT.format(to)} из {RU_FMT.format(total)}
         </span>
         {pages > 1 && (
           <div style={{ display: 'flex', gap: 4 }}>
@@ -673,7 +659,7 @@ function PreviewTable({ events }: { events: ProcessEvent[] }) {
 
 /* ── Platform selector ────────────────────────────────────── */
 function PlatformSelector({ selected, onChange }: { selected: string; onChange: (id: string) => void }) {
-  const platform = PLATFORMS.find(p => p.id === selected) ?? PLATFORMS[0];
+  const platform = getPlatform(selected);
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -693,7 +679,6 @@ function PlatformSelector({ selected, onChange }: { selected: string; onChange: 
           );
         })}
       </div>
-      {/* Steps for selected platform */}
       <div style={{ marginTop: 10, padding: '14px 18px', background: platform.bg, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {platform.steps.map((step, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -758,75 +743,6 @@ function DemoCard({ onLoad, loaded }: { onLoad: () => void; loaded: boolean }) {
         </button>
         {loaded && <Link href="/analysis"><a className="btn btn-sm">К AS-IS →</a></Link>}
       </div>
-    </div>
-  );
-}
-
-/* ── Collapsible export guide ─────────────────────────────── */
-function ExportGuide() {
-  const [open, setOpen] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  return (
-    <div style={{ marginTop: 20 }}>
-      <button onClick={() => setOpen(o => !o)} style={{
-        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-        background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0',
-        color: 'var(--ink-muted)', fontSize: 13.5, fontWeight: 600,
-      }}>
-        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-        </svg>
-        Справка: как экспортировать CSV из вашей системы
-        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-          style={{ marginLeft: 'auto', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>
-          <path d="M6 9l6 6 6-6"/>
-        </svg>
-      </button>
-
-      {open && (
-        <div className="card" style={{ paddingBottom: 0 }}>
-          {PLATFORMS.filter(p => p.id !== 'universal').map((p, i, arr) => {
-            const exp = expandedId === p.id;
-            return (
-              <div key={p.id} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
-                <button onClick={() => setExpandedId(exp ? null : p.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                  padding: '13px 20px', background: exp ? p.bg + '88' : 'none',
-                  border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background .15s',
-                }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: exp ? p.color : p.bg, color: exp ? '#fff' : p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: p.abbr.length > 2 ? 9 : 11, flexShrink: 0, transition: 'all .15s' }}>
-                    {p.abbr}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{p.label}</span>
-                    {!exp && <span style={{ marginLeft: 12, fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--f-mono)' }}>{p.cols}</span>}
-                  </div>
-                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-                    style={{ flexShrink: 0, transition: 'transform .2s', transform: exp ? 'rotate(180deg)' : 'none' }}>
-                    <path d="M6 9l6 6 6-6"/>
-                  </svg>
-                </button>
-                {exp && (
-                  <div style={{ padding: '2px 20px 18px 62px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {p.steps.map((step, si) => (
-                      <div key={si} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: p.bg, color: p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
-                          {si + 1}
-                        </div>
-                        <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>{step}</div>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 4, padding: '7px 12px', background: 'var(--bg)', borderRadius: 8, fontSize: 12.5, color: 'var(--ink-muted)', fontFamily: 'var(--f-mono)' }}>
-                      Колонки: <span style={{ color: p.color, fontWeight: 600 }}>{p.cols}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
