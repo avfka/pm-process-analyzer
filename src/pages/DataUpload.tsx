@@ -517,9 +517,7 @@ export default function DataUpload() {
       {stage === 'loaded' && (
         <div ref={batchesRef} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
           <div className="card card-pad">
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-              Загруженные файлы
-            </div>
+            <h3 style={{ marginBottom: 10 }}>Загруженные файлы</h3>
             {/* Batch list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
               {batches.map(b => (
