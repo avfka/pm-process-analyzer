@@ -546,12 +546,16 @@ export default function DataUpload() {
             {/* CTA row */}
             <div style={{ paddingTop: 12, borderTop: '1px solid var(--line-soft)' }}>
               <button
-                onClick={() => uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="btn btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent-soft)', border: '1.5px solid var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }}
               >
-                <span style={{ fontSize: 13.5, color: 'var(--accent)', fontWeight: 600 }}>Загрузить данные из другой платформы</span>
-                <span style={{ color: 'var(--ink-faint)', marginLeft: 6, fontSize: 12.5 }}>— анализ объединит всё вместе</span>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                Загрузить данные из другой платформы
               </button>
+              <span style={{ color: 'var(--ink-faint)', marginLeft: 8, fontSize: 12.5 }}>— анализ объединит всё вместе</span>
             </div>
 
           </div>
