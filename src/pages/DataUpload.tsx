@@ -621,7 +621,7 @@ function StepLabel({ n, title, subtitle, style }: { n: number; title: string; su
 }
 
 /* ── Preview table with pagination ───────────────────────── */
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 7;
 
 function PreviewTable({ events }: { events: ProcessEvent[] }) {
   const [page, setPage] = useState(0);
@@ -633,7 +633,7 @@ function PreviewTable({ events }: { events: ProcessEvent[] }) {
 
   return (
     <div className="card" style={{ paddingBottom: 0 }}>
-      <div style={{ overflowX: 'auto' }}>
+      <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'min(340px, 38vh)' }}>
         <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
           <thead><tr>
             <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th>
@@ -653,11 +653,11 @@ function PreviewTable({ events }: { events: ProcessEvent[] }) {
           </tbody>
         </table>
       </div>
-      {pages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderTop: '1px solid var(--line-soft)' }}>
-          <span style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
-            {new Intl.NumberFormat('ru-RU').format(from)}–{new Intl.NumberFormat('ru-RU').format(to)} из {new Intl.NumberFormat('ru-RU').format(total)}
-          </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderTop: '1px solid var(--line-soft)' }}>
+        <span style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
+          {new Intl.NumberFormat('ru-RU').format(from)}–{new Intl.NumberFormat('ru-RU').format(to)} из {new Intl.NumberFormat('ru-RU').format(total)}
+        </span>
+        {pages > 1 && (
           <div style={{ display: 'flex', gap: 4 }}>
             <button className="btn btn-ghost btn-sm" onClick={() => setPage(0)} disabled={page === 0} style={{ padding: '0 8px' }}>«</button>
             <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => p - 1)} disabled={page === 0} style={{ padding: '0 10px' }}>‹</button>
@@ -665,8 +665,8 @@ function PreviewTable({ events }: { events: ProcessEvent[] }) {
             <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => p + 1)} disabled={page >= pages - 1} style={{ padding: '0 10px' }}>›</button>
             <button className="btn btn-ghost btn-sm" onClick={() => setPage(pages - 1)} disabled={page >= pages - 1} style={{ padding: '0 8px' }}>»</button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
