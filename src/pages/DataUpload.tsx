@@ -174,6 +174,7 @@ export default function DataUpload() {
   const [error, setError] = useState<string | null>(null);
   const [platformId, setPlatformId] = useState('universal');
   const batchesRef = useRef<HTMLDivElement>(null);
+  const uploadRef = useRef<HTMLDivElement>(null);
 
   const platform = PLATFORMS.find(p => p.id === platformId) ?? PLATFORMS[0];
   const stats = analyzer.basicStats;
@@ -383,7 +384,7 @@ export default function DataUpload() {
 
       {/* ── STEP 2: upload — shown in idle and loaded ── */}
       {stage !== 'mapping' && (
-        <>
+        <div ref={uploadRef}>
           <StepLabel
             n={2}
             title="Загрузите CSV-файл"
@@ -400,7 +401,7 @@ export default function DataUpload() {
               <UploadZone platform={platform} onChange={handleFileSelect} fullWidth />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* ── MAPPING ── */}
@@ -544,10 +545,13 @@ export default function DataUpload() {
 
             {/* CTA row */}
             <div style={{ paddingTop: 12, borderTop: '1px solid var(--line-soft)' }}>
-              <div style={{ fontSize: 13.5, color: 'var(--ink-muted)' }}>
-                Есть данные из другой платформы?
-                <span style={{ color: 'var(--ink-faint)', marginLeft: 6, fontSize: 12.5 }}>Загрузите ещё — анализ объединит всё вместе</span>
-              </div>
+              <button
+                onClick={() => uploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span style={{ fontSize: 13.5, color: 'var(--accent)', fontWeight: 600 }}>Загрузить данные из другой платформы</span>
+                <span style={{ color: 'var(--ink-faint)', marginLeft: 6, fontSize: 12.5 }}>— анализ объединит всё вместе</span>
+              </button>
             </div>
 
           </div>
