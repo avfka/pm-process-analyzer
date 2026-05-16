@@ -381,14 +381,12 @@ export default function DataUpload() {
       {/* ── STEP 2: upload — shown in idle and loaded ── */}
       {stage !== 'mapping' && (
         <>
-          {stage === 'idle' && (
-            <StepLabel
-              n={2}
-              title="Загрузите CSV-файл"
-              subtitle="Можно выбрать несколько файлов сразу — каждый пройдёт через маппер"
-              style={{ marginTop: 20 }}
-            />
-          )}
+          <StepLabel
+            n={2}
+            title="Загрузите CSV-файл"
+            subtitle="Можно выбрать несколько файлов сразу — каждый пройдёт через маппер"
+            style={{ marginTop: 20 }}
+          />
           {batches.length === 0 ? (
             <div className="grid-asym" style={{ alignItems: 'stretch', marginTop: 10 }}>
               <UploadZone platform={platform} onChange={handleFileSelect} />
@@ -543,13 +541,10 @@ export default function DataUpload() {
             </div>
 
             {/* CTA row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid var(--line-soft)' }}>
+            <div style={{ paddingTop: 12, borderTop: '1px solid var(--line-soft)' }}>
               <div style={{ fontSize: 13.5, color: 'var(--ink-muted)' }}>
                 Есть данные из другой платформы?
                 <span style={{ color: 'var(--ink-faint)', marginLeft: 6, fontSize: 12.5 }}>Загрузите ещё — анализ объединит всё вместе</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                <Link href="/analysis"><a className="btn btn-primary btn-sm">К AS-IS анализу →</a></Link>
               </div>
             </div>
 
