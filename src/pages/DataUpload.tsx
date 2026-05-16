@@ -633,7 +633,7 @@ function PreviewTable({ events }: { events: ProcessEvent[] }) {
 
   return (
     <div className="card" style={{ paddingBottom: 0 }}>
-      <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'min(340px, 38vh)' }}>
+      <div style={{ overflowX: 'auto' }}>
         <table className="t" style={{ fontSize: 13, fontFamily: 'var(--f-mono)' }}>
           <thead><tr>
             <th>case_id</th><th>activity</th><th>timestamp</th><th>actor</th><th>system</th>
