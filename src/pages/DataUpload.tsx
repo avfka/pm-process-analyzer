@@ -592,7 +592,7 @@ export default function DataUpload() {
             </div>
             <button className="btn btn-sm" onClick={handleExport} style={{ marginLeft: 'auto' }}>
               <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M12 3v13M6 9l6-6 6 6" transform="rotate(180 12 12)"/></svg>
-              Скачать CSV
+              Скачать объединённый CSV
             </button>
           </div>
           <PreviewTable events={events} />
