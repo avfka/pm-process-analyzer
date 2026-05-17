@@ -330,6 +330,7 @@ export default function DataUpload() {
     setBatches([demoBatch]);
     setPending(null);
     setError(null);
+    setTimeout(() => batchesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
 
   const handleClear = () => {
