@@ -62,13 +62,13 @@ function EmptyState() {
 
       <div className="card card-pad" style={{ marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: 'linear-gradient(135deg, var(--accent-soft) 0%, var(--accent-tint) 100%)' }}>
         <div>
-          <div className="eyebrow">Начните работу</div>
-          <h3 style={{ marginTop: 4 }}>Загрузите event log PM-команды</h3>
-          <div style={{ color: 'var(--ink-3)', marginTop: 6, fontSize: 14 }}>CSV с полями case_id, activity, timestamp, actor, system, duration.</div>
+          <div className="eyebrow">Готовы узнать, куда уходит время?</div>
+          <h3 style={{ marginTop: 4 }}>Загрузите данные вашей команды — анализ займёт меньше минуты</h3>
+          <div style={{ color: 'var(--ink-3)', marginTop: 6, fontSize: 14 }}>Выгрузите CSV из Jira, Notion, YouTrack или любого трекера — маппер сопоставит колонки автоматически.</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/upload"><a className="btn">Загрузить CSV</a></Link>
-          <Link href="/upload"><a className="btn btn-primary">Демо данные</a></Link>
+          <Link href="/upload"><a className="btn btn-primary">Попробовать на демо →</a></Link>
         </div>
       </div>
     </div>
