@@ -4,7 +4,8 @@ import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { getDashboardMetrics, getWorkloadSlices, formatRub } from "@/lib/pm-insights";
+import { getDashboardMetrics, getWorkloadSlices, getWorkAboutWork, getAutomationShare, CATEGORY_RULES, formatRub } from "@/lib/pm-insights";
+import React, { useState } from "react";
 
 const CHART_MULTI = ['#229ED9', '#7c3aed', '#16a34a', '#f59e0b', '#dc2626', '#06b6d4', '#ec4899', '#64748b'];
 
@@ -81,6 +82,9 @@ export default function Dashboard() {
   const slices = getWorkloadSlices(events);
   const m = getDashboardMetrics(events);
   const topScores = analyzer.getAutomationScores().slice(0, 4);
+  const waw = getWorkAboutWork(events);
+  const automationShare = getAutomationShare(events);
+  const uncategorized = slices.find(s => s.category === "Прочее");
 
   const workloadChart = slices.map(s => ({ cat: s.category, hours: s.hours, share: s.share }));
 
@@ -97,30 +101,42 @@ export default function Dashboard() {
 
       {/* KPI strip */}
       <div className="grid-4">
-        <KPI label="Трудозатраты"       value={`${m.totalHours} ч`}                                        sub={`${fmtNum(events.length)} событий за квартал`}                 delta={+4.2} />
-        <KPI label="Потенциал экономии" value={`~${fmtNum(Math.round(m.monthlySavingRub / 1000))}k ₽`}   sub="в месяц · по McKinsey 2024 (−40% контентно-тяжёлых)"          delta={+12.6} accent />
-        <KPI label="Рутина · в неделю"  value={`${m.routineHoursPerWeek} ч`}                              sub="часов на 1 PM — work about work"                               delta={-2.4} />
-        <KPI label="Work about work"    value="58%"                                                        sub="среднего рабочего дня · Asana 2023" />
+        <KPI label="Трудозатраты"       value={`${m.totalHours} ч`}                                      sub={`${fmtNum(events.length)} событий за период`} />
+        <KPI label="Потенциал экономии" value={`~${fmtNum(Math.round(m.monthlySavingRub / 1000))}k ₽`}  sub="в месяц · оценка по McKinsey 2024 (−40%)" accent />
+        <KPI label="Рутина · в неделю"  value={`${m.routineHoursPerWeek} ч`}                             sub="на 1 PM — work about work из ваших данных" />
+        <KPI label="Work about work"    value={`${waw.share}%`}                                           sub={<>из ваших данных · <span style={{ color: 'var(--ink-faint)' }}>бенчмарк Asana: 58%</span></>} />
       </div>
 
       {/* Workload chart */}
-      <SectionTitle title="Распределение трудозатрат" sub={`${slices.length} категорий · ${m.totalHours} часов`} />
+      <SectionTitle title="Распределение трудозатрат" sub={`${slices.filter(s => s.category !== 'Прочее').length} категорий · ${m.totalHours} часов`} />
+      {uncategorized && uncategorized.events > 0 && (
+        <div style={{ marginBottom: 12, padding: '10px 16px', background: 'var(--warn-tint)', borderRadius: 10, border: '1px solid var(--warn-soft, #fde68a)', fontSize: 13, color: 'var(--warn)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <strong>{uncategorized.events} активностей</strong> не попали ни в одну категорию и отображаются в «Прочее» — их названия не содержат ключевых слов классификатора. Проверьте раздел «Прочее» ниже.
+          </div>
+        </div>
+      )}
       <div className="card" style={{ paddingBottom: 0 }}>
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
           <div>
             <h3>По категориям задач PM</h3>
-            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>квартал к кварталу — изменение справа</div>
+            <div style={{ marginTop: 4, color: 'var(--ink-muted)', fontSize: 13 }}>Активности из вашего event log распределены по 6 категориям типологии рутинных задач PM</div>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr' }}>
           <div style={{ padding: 24 }}>
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={Math.max(260, slices.length * 46)}>
               <BarChart data={workloadChart} layout="vertical" margin={{ top: 8, right: 24, left: 0, bottom: 8 }} barCategoryGap={10}>
                 <CartesianGrid horizontal={false} stroke="var(--line)" strokeDasharray="3 3" />
                 <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} tickLine={false} axisLine={false} unit=" ч" />
                 <YAxis dataKey="cat" type="category" width={180} tick={{ fontSize: 12, fill: 'var(--ink-3)' }} tickLine={false} axisLine={false} />
                 <Tooltip content={<RcTooltip />} cursor={{ fill: 'rgba(34, 158, 217, 0.08)' }} />
-                <Bar dataKey="hours" name="часы" fill="var(--accent)" radius={[0, 8, 8, 0]} />
+                <Bar dataKey="hours" name="часы" radius={[0, 8, 8, 0]}>
+                  {slices.map((s, i) => (
+                    <Cell key={i} fill={s.category === 'Прочее' ? 'var(--line-strong)' : CHART_MULTI[i % (CHART_MULTI.length - 1)]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -133,11 +149,7 @@ export default function Dashboard() {
               </tr></thead>
               <tbody>
                 {slices.map((s) => (
-                  <tr key={s.category}>
-                    <td style={{ fontWeight: 500, fontSize: 13 }}>{s.category}</td>
-                    <td className="num-cell semibold">{s.hours}</td>
-                    <td className="num-cell muted">{s.share}%</td>
-                  </tr>
+                  <CategoryRow key={s.category} slice={s} />
                 ))}
               </tbody>
             </table>
@@ -201,9 +213,9 @@ export default function Dashboard() {
             </div>
           </div>
           <div style={{ marginTop: 12, paddingTop: 16, borderTop: '1px solid var(--line-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <Row k="Доля work about work" v={<span style={{ color: 'var(--accent)' }}>58%</span>} />
-            <Row k="Автоматизируемо" v="73%" />
-            <Row k="Топ категория" v={slices[0]?.category ?? '—'} />
+            <Row k="Work about work" v={<span style={{ color: 'var(--accent)' }}>{waw.share}%</span>} />
+            <Row k="Автоматизируемо" v={`${automationShare}%`} />
+            <Row k="Топ категория" v={slices.find(s => s.category !== 'Прочее')?.category ?? '—'} />
           </div>
         </div>
       </div>
@@ -224,20 +236,66 @@ export default function Dashboard() {
   );
 }
 
-function KPI({ label, value, sub, delta, accent }: { label: string; value: string; sub: string; delta?: number; accent?: boolean }) {
+function KPI({ label, value, sub, accent }: { label: string; value: string; sub: React.ReactNode; accent?: boolean }) {
   return (
     <div className="card card-pad">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ marginBottom: 12 }}>
         <span style={{ fontSize: 13, color: 'var(--ink-muted)', fontWeight: 500 }}>{label}</span>
-        {delta !== undefined && (
-          <span className={'pill ' + (delta > 0 ? 'pill-pos' : delta < 0 ? 'pill-neg' : '')}>
-            {delta > 0 ? '+' : '−'}{Math.abs(delta).toFixed(1)}%
-          </span>
-        )}
       </div>
       <div className="num-xl" style={{ color: accent ? 'var(--accent)' : undefined }}>{value}</div>
       <div style={{ marginTop: 8, fontSize: 13, color: 'var(--ink-muted)', lineHeight: 1.5 }}>{sub}</div>
     </div>
+  );
+}
+
+function CategoryRow({ slice }: { slice: { category: string; hours: number; share: number; topActivities: string[] } }) {
+  const [open, setOpen] = useState(false);
+  const keywords = CATEGORY_RULES[slice.category as keyof typeof CATEGORY_RULES];
+  const isOther = slice.category === 'Прочее';
+
+  return (
+    <>
+      <tr
+        onClick={() => setOpen(o => !o)}
+        style={{ cursor: 'pointer', opacity: isOther ? 0.6 : 1 }}
+        title="Нажмите чтобы увидеть активности"
+      >
+        <td style={{ fontWeight: 500, fontSize: 13 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {isOther && <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>}
+            {slice.category}
+            <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform .15s', transform: open ? 'rotate(180deg)' : 'none' }}><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </td>
+        <td className="num-cell semibold">{slice.hours}</td>
+        <td className="num-cell muted">{slice.share}%</td>
+      </tr>
+      {open && (
+        <tr>
+          <td colSpan={3} style={{ padding: '0 16px 10px', background: 'var(--bg)' }}>
+            {slice.topActivities.length > 0 && (
+              <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 6 }}>
+                <span style={{ fontWeight: 600, color: 'var(--ink-3)' }}>Топ активности: </span>
+                {slice.topActivities.map((a, i) => (
+                  <span key={i} className="pill" style={{ marginRight: 4, fontSize: 11 }}>{a}</span>
+                ))}
+              </div>
+            )}
+            {keywords && (
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>
+                <span style={{ fontWeight: 600 }}>Ключевые слова классификатора: </span>
+                {keywords.join(', ')}
+              </div>
+            )}
+            {isOther && (
+              <div style={{ fontSize: 11.5, color: 'var(--warn)', marginTop: 4 }}>
+                Эти активности не содержат ключевых слов ни одной категории. Переименуйте их или добавьте ключевые слова.
+              </div>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

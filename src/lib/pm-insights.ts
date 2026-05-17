@@ -7,7 +7,8 @@ export type WorkloadCategory =
   | "Backlog и планирование"
   | "Согласования"
   | "Встречи и коммуникации"
-  | "Данные и отчётность";
+  | "Данные и отчётность"
+  | "Прочее";
 
 export interface WorkloadSlice {
   category: WorkloadCategory;
@@ -96,7 +97,7 @@ export const RECOMMENDATION_EVIDENCE_BY_ID: Record<string, RecommendationEvidenc
   },
 };
 
-const CATEGORY_RULES: Record<WorkloadCategory, string[]> = {
+export const CATEGORY_RULES: Partial<Record<WorkloadCategory, string[]>> = {
   "Стратегия и discovery": ["discovery", "гипотез", "заказчик", "требован", "интервью", "исслед"],
   "Контент и документы": ["prd", "специфик", "отчет", "отчёт", "сводк", "повест", "документ"],
   "Backlog и планирование": ["jira", "backlog", "бэклог", "задач", "спринт", "планирован", "приорит"],
@@ -106,6 +107,7 @@ const CATEGORY_RULES: Record<WorkloadCategory, string[]> = {
 };
 
 const CATEGORY_ORDER = Object.keys(CATEGORY_RULES) as WorkloadCategory[];
+const ALL_CATEGORIES: WorkloadCategory[] = [...CATEGORY_ORDER, "Прочее"];
 const UNSTRUCTURED_SYSTEMS = new Set(["Email", "Google Meet", "Miro", "Slack"]);
 const HOURLY_RATE = PM_MONTHLY_SALARY / WORK_HOURS_PER_MONTH;
 const MINUTE_RATE = PM_MONTHLY_SALARY / (WORK_HOURS_PER_MONTH * 60);
@@ -122,21 +124,21 @@ function matchCategory(event: ProcessEvent): WorkloadCategory {
   const text = `${event.activity} ${event.system}`.toLowerCase();
   return (
     CATEGORY_ORDER.find((category) =>
-      CATEGORY_RULES[category].some((keyword) => text.includes(keyword))
-    ) ?? "Стратегия и discovery"
+      CATEGORY_RULES[category]!.some((keyword) => text.includes(keyword))
+    ) ?? "Прочее"
   );
 }
 
 export function getWorkloadSlices(events: ProcessEvent[]): WorkloadSlice[] {
   const totalMinutes = events.reduce((sum, event) => sum + Number(event.duration || 0), 0) || 1;
   const buckets = new Map<WorkloadCategory, ProcessEvent[]>();
-  CATEGORY_ORDER.forEach((category) => buckets.set(category, []));
+  ALL_CATEGORIES.forEach((category) => buckets.set(category, []));
 
   events.forEach((event) => {
     buckets.get(matchCategory(event))!.push(event);
   });
 
-  return CATEGORY_ORDER.map((category) => {
+  return ALL_CATEGORIES.map((category) => {
     const bucket = buckets.get(category) ?? [];
     const minutes = bucket.reduce((sum, event) => sum + Number(event.duration || 0), 0);
     const activityCounts = new Map<string, number>();
@@ -155,13 +157,19 @@ export function getWorkloadSlices(events: ProcessEvent[]): WorkloadSlice[] {
         .slice(0, 3)
         .map(([activity]) => activity),
     };
-  }).sort((a, b) => b.minutes - a.minutes);
+  })
+    .filter((s) => s.minutes > 0)
+    .sort((a, b) => {
+      if (a.category === "Прочее") return 1;
+      if (b.category === "Прочее") return -1;
+      return b.minutes - a.minutes;
+    });
 }
 
 export function getWorkAboutWork(events: ProcessEvent[]) {
   const operational = events.filter((event) => {
     const category = matchCategory(event);
-    return category !== "Стратегия и discovery";
+    return category !== "Стратегия и discovery" && category !== "Прочее";
   });
   const minutes = operational.reduce((sum, event) => sum + Number(event.duration || 0), 0);
   const total = events.reduce((sum, event) => sum + Number(event.duration || 0), 0) || 1;
@@ -171,6 +179,18 @@ export function getWorkAboutWork(events: ProcessEvent[]) {
     hours: Math.round((minutes / 60) * 10) / 10,
     share: Math.round((minutes / total) * 100),
   };
+}
+
+export function getAutomationShare(events: ProcessEvent[]): number {
+  const automatable: WorkloadCategory[] = [
+    "Контент и документы", "Backlog и планирование",
+    "Согласования", "Данные и отчётность",
+  ];
+  const automatableMin = events
+    .filter((e) => automatable.includes(matchCategory(e)))
+    .reduce((sum, e) => sum + Number(e.duration || 0), 0);
+  const total = events.reduce((sum, e) => sum + Number(e.duration || 0), 0) || 1;
+  return Math.round((automatableMin / total) * 100);
 }
 
 export function estimateWeeklyRecoverableHours(events: ProcessEvent[]) {
